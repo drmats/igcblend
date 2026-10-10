@@ -59,3 +59,25 @@ def tile_to_polygon (tile: Tile) -> Polygon:
             tilebounds.north,
         ),
     )
+
+
+
+
+# get flat tile list and return list of rows with filenames
+def tile_list_to_image_array (
+    tiles: list[Tile],
+    namefunction=(lambda z, x, y: f"{z}.{x}.{y}"),
+) -> list[list[str]]:
+    if not tiles or not tiles[0]:
+        raise ValueError("'tiles' is empty.")
+    images = dict()
+    for tile in tiles:
+        if not tile.y in images:
+            images[tile.y] = dict()
+        images[tile.y][tile.x] = namefunction(tile.z, tile.x, tile.y)
+    image_array = []
+    for y, row in enumerate(sorted(images)):
+        image_array.append([])
+        for col in sorted(images[row]):
+            image_array[y].append(images[row][col])
+    return image_array
