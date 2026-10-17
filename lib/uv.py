@@ -24,10 +24,10 @@ def remove_all_uv_layers (mesh: bpy.types.Mesh) -> None:
 # ...
 def create_top_projected_uv (
     mesh: bpy.types.Mesh,
-    uv_map_name="UVMap",
+    uv_map_name: str = "UVMap",
 ) -> bpy.types.MeshUVLoopLayer:
     # create new UV layer
-    uv_layer = mesh.uv_layers.new(name=uv_map_name)
+    uv_layer = mesh.uv_layers.new(name = uv_map_name)
     assert uv_layer is not None
     mesh.uv_layers.active = uv_layer
 

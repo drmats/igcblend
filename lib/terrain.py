@@ -43,11 +43,11 @@ def decode_terrarium_image (
     # create destination image
     source_width, source_height = cast(tuple[int, int], source.size)
     height_image = bpy.data.images.new(
-        name=destination_image_name,
-        width=source_width,
-        height=source_height,
-        alpha=False,
-        float_buffer=True,
+        name = destination_image_name,
+        width = source_width,
+        height = source_height,
+        alpha = False,
+        float_buffer = True,
     )
 
     # get working copy of source pixels
@@ -95,8 +95,8 @@ def decode_terrarium_image (
 def apply_terrarium_displace (
     object_name: str,
     terrarium_image_path: str,
-    cuts_ratio=32,
-    displace_strength=1.0,
+    cuts_ratio: int = 32,
+    displace_strength: float = 1.0,
 ) -> None:
     # find object
     obj, mesh = get_mesh(object_name)
@@ -120,9 +120,9 @@ def apply_terrarium_displace (
     height_image = decode_terrarium_image(source, f"{object_name}_HeightMap")
 
     # subdivide
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.subdivide(number_cuts=int((width-1)/cuts_ratio))
-    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.mode_set(mode = "EDIT")
+    bpy.ops.mesh.subdivide(number_cuts = int((width-1)/cuts_ratio))
+    bpy.ops.object.mode_set(mode = "OBJECT")
 
     # UV - create new map (adjusted for pixel centers)
     uv_layer_name = "TerrariumUV"
@@ -137,8 +137,8 @@ def apply_terrarium_displace (
     height_texture = cast(
         bpy.types.ImageTexture,
             bpy.data.textures.new(
-            name=texture_name,
-            type="IMAGE"
+            name = texture_name,
+            type = "IMAGE"
         ),
     )
     height_texture.image = height_image
@@ -150,8 +150,8 @@ def apply_terrarium_displace (
     displace = cast(
         bpy.types.DisplaceModifier,
         obj.modifiers.new(
-            name="TerrainDisplace",
-            type="DISPLACE",
+            name = "TerrainDisplace",
+            type = "DISPLACE",
         ),
     )
     displace.texture = height_texture
@@ -162,7 +162,7 @@ def apply_terrarium_displace (
     displace.mid_level = 0.0
 
     # apply modifier to geometry (current object is selected)
-    bpy.ops.object.convert(target="MESH")
+    bpy.ops.object.convert(target = "MESH")
     mesh = cast(bpy.types.Mesh, obj.data)
 
     # ensure verts, edges and faces are up to date
@@ -170,9 +170,9 @@ def apply_terrarium_displace (
 
     # clear all assets not needed anymore
     remove_all_uv_layers(mesh)
-    bpy.data.textures.remove(height_texture, do_unlink=True)
-    bpy.data.images.remove(height_image, do_unlink=True)
-    bpy.data.images.remove(source, do_unlink=True)
+    bpy.data.textures.remove(height_texture, do_unlink = True)
+    bpy.data.images.remove(height_image, do_unlink = True)
+    bpy.data.images.remove(source, do_unlink = True)
 
     # leave nothing selected
     clear_selection()

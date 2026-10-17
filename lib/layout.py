@@ -27,7 +27,7 @@ def get_mesh (object_name: str) -> tuple[bpy.types.Object, bpy.types.Mesh]:
 
 # ...
 def clear_selection () -> None:
-    bpy.ops.object.select_all(action="DESELECT")
+    bpy.ops.object.select_all(action = "DESELECT")
 
 
 

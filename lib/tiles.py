@@ -16,23 +16,23 @@ from lib.projections import project_to_3857, project_to_4326
 # compute smallest tile set (z, x, y) containing geometry with some padding
 def get_tiles_with_padding (
     geometry,
-    padding=1000,
-    zoom=15,
+    padding: int = 1000,
+    zoom: int = 15,
 ) -> list[Tile]:
     bbox = box(*geometry.bounds).buffer(
-        padding, cap_style="square", join_style="mitre",
+        padding, cap_style = "square", join_style = "mitre",
     )
     return list(tiles(
         *transform(project_to_4326, bbox).bounds,
-        zooms=zoom,
-        truncate=True,
+        zooms = zoom,
+        truncate = True,
     ))
 
 
 
 
 # given tiles array create denser array (zoomed-in by `steps`)
-def tiles_subdivide (tiles: list[Tile], steps=2) -> list[Tile]:
+def tiles_subdivide (tiles: list[Tile], steps: int = 2) -> list[Tile]:
     if steps <= 0:
         return tiles
     return tiles_subdivide(
@@ -41,7 +41,7 @@ def tiles_subdivide (tiles: list[Tile], steps=2) -> list[Tile]:
             for tile in tiles
             for tile_child in children(tile)
         ],
-        steps=steps-1,
+        steps = steps - 1,
     )
 
 
@@ -66,7 +66,7 @@ def tile_to_polygon (tile: Tile) -> Polygon:
 # get flat tile list and return list of rows with filenames
 def tile_list_to_image_array (
     tiles: list[Tile],
-    namefunction=(lambda z, x, y: f"{z}.{x}.{y}"),
+    namefunction = (lambda z, x, y: f"{z}.{x}.{y}"),
 ) -> list[list[str]]:
     if not tiles or not tiles[0]:
         raise ValueError("'tiles' is empty.")

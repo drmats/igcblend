@@ -27,14 +27,17 @@ def browser_request_headers () -> dict[str, str]:
 def download_file (
     source: str,
     destination: str,
-    headers=browser_request_headers(),
-    chunk_size=8192,
+    headers: dict[str, str] = browser_request_headers(),
+    chunk_size: int = 8192,
 ) -> bool:
     if os.path.exists(destination):
         return False
-    os.makedirs(os.path.dirname(destination), exist_ok=True)
-    req = urllib.request.Request(source, headers=headers)
-    with urllib.request.urlopen(req) as response, open(destination, "wb") as out_file:
+    os.makedirs(os.path.dirname(destination), exist_ok = True)
+    req = urllib.request.Request(source, headers = headers)
+    with (
+        urllib.request.urlopen(req) as response,
+        open(destination, "wb") as out_file,
+    ):
         while chunk := response.read(chunk_size):
             out_file.write(chunk)
     return True
@@ -45,7 +48,7 @@ def download_file (
 # ...
 def download_terrarium_tile (
     z: int,
-    x :int,
+    x: int,
     y: int,
     destination_path: str,
 ) -> None:
@@ -60,7 +63,7 @@ def download_terrarium_tile (
 # ...
 def download_satellite_tile (
     z: int,
-    x :int,
+    x: int,
     y: int,
     destination_path: str,
 ) -> None:
@@ -75,7 +78,7 @@ def download_satellite_tile (
 # ...
 def download_xcontest_topo_tile (
     z: int,
-    x :int,
+    x: int,
     y: int,
     destination_path: str,
 ) -> None:

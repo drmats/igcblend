@@ -13,7 +13,7 @@ from PIL import Image
 def merge_tiles (
     image_array: list[list[str]],
     output_path: str,
-    quality=95,
+    quality: int = 95,
 ) -> None:
     """
     Merges a grid of images from the given two-dimensional array
@@ -56,18 +56,21 @@ def merge_tiles (
     for row_idx, row in enumerate(image_array):
         for col_idx, img_path in enumerate(row):
             with Image.open(img_path) as img:
+
                 # image dimensions check
                 if img.size != (tile_width, tile_height):
                     raise ValueError(
                         f"Image '{img_path}' has {img.size} dimensions, "
                         f"but {tile_width}x{tile_height} is expected."
                     )
+
                 # paste offsets
                 x_offset = col_idx * tile_width
                 y_offset = row_idx * tile_height
+
                 # paste current image to work buffer
                 canvas.paste(img, (x_offset, y_offset))
 
     # save
-    canvas.save(output_path, quality=quality)
+    canvas.save(output_path, quality = quality)
     canvas.close()
