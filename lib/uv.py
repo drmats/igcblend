@@ -5,8 +5,8 @@
 https://github.com/drmats
 """
 
-from typing import cast
 import bpy # type: ignore
+from typing import cast
 
 from lib.modeling import compute_2d_bounds
 
@@ -25,7 +25,7 @@ def remove_all_uv_layers (mesh: bpy.types.Mesh) -> None:
 def create_top_projected_uv (
     mesh: bpy.types.Mesh,
     uv_map_name="UVMap",
-) -> None:
+) -> bpy.types.MeshUVLoopLayer:
     # create new UV layer
     uv_layer = mesh.uv_layers.new(name=uv_map_name)
     assert uv_layer is not None
@@ -45,23 +45,17 @@ def create_top_projected_uv (
             v = (vtx.co.y - bounds.min_y) / bounds.range_y
             uv_layer.data[loop_index].uv = (u, v)
 
+    return uv_layer
+
 
 
 
 # ...
 def adjust_uv_for_pixel_centers (
-    mesh: bpy.types.Mesh,
+    uv_layer: bpy.types.MeshUVLoopLayer,
     texture_width: int,
     texture_height: int,
-    uv_map_name="UVMap",
 ) -> None:
-    # get UV layer
-    uv_layer = mesh.uv_layers.get(uv_map_name)
-    if uv_layer is None:
-        raise ValueError(f"UV layer '{uv_map_name}' does not exist.")
-    uv_layer = cast(bpy.types.MeshUVLoopLayer, uv_layer)
-
-    # make adjustment
     for mesh_uv_loop in uv_layer.data:
         (u, v) = mesh_uv_loop.uv
         u = u * (texture_width - 1) / texture_width + 0.5 / texture_width

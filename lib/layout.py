@@ -5,8 +5,8 @@
 https://github.com/drmats
 """
 
-from typing import cast
 import bpy # type: ignore
+from typing import cast
 
 
 

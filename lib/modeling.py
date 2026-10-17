@@ -5,8 +5,8 @@
 https://github.com/drmats
 """
 
-from dataclasses import dataclass
 import bpy # type: ignore
+from dataclasses import dataclass
 
 
 
