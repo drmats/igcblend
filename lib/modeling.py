@@ -6,7 +6,9 @@ https://github.com/drmats
 """
 
 import bpy # type: ignore
-from dataclasses import dataclass
+from typing import cast
+
+from lib.layout import clear_selection, select_object
 
 
 
@@ -26,24 +28,49 @@ def build_plane (
 
 
 # ...
-@dataclass
-class Bounds2D:
-    min_x: float
-    max_x: float
-    min_y: float
-    max_y: float
-    range_x: float
-    range_y: float
+def merge_planes (
+    name_prefix: str,
+    new_name: str | None = None,
+    merge_distance: int = 100,
+) -> bpy.types.Object:
+    # find all `name_prefix*` meshes
+    objects = [
+        obj for obj in bpy.data.objects
+        if obj.type == "MESH" and obj.name.startswith(name_prefix)
+    ]
+    if not objects:
+        raise ValueError(f"No meshes starting with '{name_prefix}' found.")
 
+    # take care of selection
+    clear_selection()
+    for obj in objects:
+        obj.select_set(True)
+    select_object(objects[0])
 
+    # join into one mesh
+    bpy.ops.object.join()
+    merged_obj = cast(bpy.types.Object, bpy.context.active_object)
 
+    # enter edit mode
+    bpy.ops.object.mode_set(mode = "EDIT")
 
-# ...
-def compute_2d_bounds (mesh: bpy.types.Mesh) -> Bounds2D:
-    min_x = min(v.co.x for v in mesh.vertices)
-    max_x = max(v.co.x for v in mesh.vertices)
-    min_y = min(v.co.y for v in mesh.vertices)
-    max_y = max(v.co.y for v in mesh.vertices)
-    range_x = max_x - min_x
-    range_y = max_y - min_y
-    return Bounds2D(min_x, max_x, min_y, max_y, range_x, range_y)
+    # merge by distance
+    bpy.ops.mesh.select_all(action = "SELECT")
+    bpy.ops.mesh.remove_doubles(threshold = merge_distance)
+
+    # delete loose
+    bpy.ops.mesh.delete_loose()
+
+    # back to object mode
+    bpy.ops.object.mode_set(mode = "OBJECT")
+
+    # set new name
+    if new_name is None:
+        new_name = f"{name_prefix}_Merged"
+    merged_obj.name = new_name
+    cast(bpy.types.Mesh, merged_obj.data).name = f"{new_name}_Mesh"
+
+    # leave nothing selected
+    clear_selection()
+
+    return merged_obj

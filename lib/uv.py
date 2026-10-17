@@ -6,9 +6,8 @@ https://github.com/drmats
 """
 
 import bpy # type: ignore
-from typing import cast
 
-from lib.modeling import compute_2d_bounds
+from lib.simplegeom import compute_2d_bounds
 
 
 
