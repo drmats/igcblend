@@ -68,7 +68,7 @@ def download_satellite_tile (
     destination_path: str,
 ) -> None:
     download_file(
-        f"https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         f"{destination_path}/satellite.{z}.{x}.{y}.jpg",
     )
 
@@ -89,5 +89,20 @@ def download_xcontest_topo_tile (
             **browser_request_headers(),
             "Referer": "https://www.xcontest.org/",
             "Origin":"https://www.xcontest.org",
-        }
+        },
+    )
+
+
+
+
+# ...
+def download_open_topo_tile (
+    z: int,
+    x: int,
+    y: int,
+    destination_path: str,
+) -> None:
+    download_file(
+        f"https://tile.opentopomap.org/{z}/{x}/{y}.png",
+        f"{destination_path}/opentopo.{z}.{x}.{y}.png",
     )
