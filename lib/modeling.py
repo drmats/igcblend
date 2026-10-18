@@ -64,6 +64,14 @@ def merge_planes (
     # back to object mode
     bpy.ops.object.mode_set(mode = "OBJECT")
 
+    # delete unused meshes
+    meshes = [
+        mesh for mesh in bpy.data.meshes
+        if mesh.name.startswith(name_prefix) and mesh.users == 0
+    ]
+    for mesh in meshes:
+        bpy.data.meshes.remove(mesh)
+
     # set new name
     if new_name is None:
         new_name = f"{name_prefix}_Merged"
