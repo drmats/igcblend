@@ -4,6 +4,7 @@
 https://github.com/drmats
 """
 
+from typing import Callable
 from mercantile import bounds, children, Tile, tiles
 from shapely import box, Polygon
 from shapely.ops import transform
@@ -66,7 +67,7 @@ def tile_to_polygon (tile: Tile) -> Polygon:
 # get flat tile list and return list of rows with filenames
 def tile_list_to_image_array (
     tiles: list[Tile],
-    namefunction = (lambda z, x, y: f"{z}.{x}.{y}"),
+    namefunction: Callable[[int, int, int], str] = (lambda z, x, y: f"{z}.{x}.{y}"),
 ) -> list[list[str]]:
     if not tiles or not tiles[0]:
         raise ValueError("'tiles' is empty.")
