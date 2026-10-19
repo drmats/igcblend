@@ -1,5 +1,6 @@
 fake-bpy-module==20261001
 libigc==1.2.0
+mathutils==5.1.0
 mercantile==1.2.1
 numpy==2.5.3
 pillow==12.3.0
