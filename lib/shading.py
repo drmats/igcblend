@@ -11,11 +11,11 @@ import bpy
 
 
 
-# Node Group: Emission with Diffuse BDSF for shadows
+# Node Group: Emission mixed with Diffuse BDSF for shadows
 # input: color
 # output: shader
 def emissionshadow_node_group(name = "EmissionShadow"):
-    # Node Tree
+    # node tree
     emissionshadow = bpy.data.node_groups.new(
         type = "ShaderNodeTree",
         name = name,
@@ -24,7 +24,7 @@ def emissionshadow_node_group(name = "EmissionShadow"):
     emissionshadow.description = ""
     emissionshadow.default_group_node_width = 140
 
-    # Input Socket - Color
+    # input socket: Color
     color_socket = emissionshadow.interface.new_socket(
         name="Color",
         in_out="INPUT",
@@ -35,7 +35,7 @@ def emissionshadow_node_group(name = "EmissionShadow"):
     color_socket.default_input = "VALUE"
     color_socket.structure_type = "AUTO"
 
-    # Output Socket - Shader
+    # output socket: Shader
     shader_socket = emissionshadow.interface.new_socket(
         name="Shader",
         in_out="OUTPUT",
@@ -45,48 +45,44 @@ def emissionshadow_node_group(name = "EmissionShadow"):
     shader_socket.default_input = "VALUE"
     shader_socket.structure_type = "AUTO"
 
-    # Emission Node
+    # node: Emission
     emission = emissionshadow.nodes.new("ShaderNodeEmission")
     emission.name = "Emission"
     emission.show_options = True
-    # Strength
-    emission.inputs[1].default_value = 1.0
+    emission.inputs[1].default_value = 1.0 # strength
 
-    # Diffuse BSDF Node
+    # node: Diffuse BSDF
     diffuse_bsdf = emissionshadow.nodes.new("ShaderNodeBsdfDiffuse")
     diffuse_bsdf.name = "Diffuse BSDF"
     diffuse_bsdf.show_options = True
-    # Roughness
-    diffuse_bsdf.inputs[1].default_value = 0.0
-    # Normal
-    diffuse_bsdf.inputs[2].default_value = (0.0, 0.0, 0.0)
+    diffuse_bsdf.inputs[1].default_value = 0.0 # roughness
+    diffuse_bsdf.inputs[2].default_value = (0.0, 0.0, 0.0) # normal
 
-    # Mix Shader Node
+    # node: Mix Shader
     mix_shader = emissionshadow.nodes.new("ShaderNodeMixShader")
     mix_shader.name = "Mix Shader"
     mix_shader.show_options = True
-    # Fac
-    mix_shader.inputs[0].default_value = 0.75
+    mix_shader.inputs[0].default_value = 0.75 # fac
 
-    # Node Group Input
+    # node group input
     group_input = emissionshadow.nodes.new("NodeGroupInput")
     group_input.name = "Group Input"
     group_input.show_options = True
 
-    # Node Group Output
+    # node group output
     group_output = emissionshadow.nodes.new("NodeGroupOutput")
     group_output.name = "Group Output"
     group_output.show_options = True
     group_output.is_active_output = True
 
-    # Locations
+    # locations
     emissionshadow.nodes["Group Input"].location = (-398.0, 2.0)
     emissionshadow.nodes["Emission"].location = (-160.0, 95.0)
     emissionshadow.nodes["Diffuse BSDF"].location = (-160.0, -111.0)
     emissionshadow.nodes["Mix Shader"].location = (93.0, 45.0)
     emissionshadow.nodes["Group Output"].location = (293.0, 32.0)
 
-    # Dimensions
+    # dimensions
     emissionshadow.nodes["Group Input"].width  = 140.0
     emissionshadow.nodes["Group Input"].height = 100.0
     emissionshadow.nodes["Emission"].width  = 140.0
