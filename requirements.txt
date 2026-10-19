@@ -1,4 +1,4 @@
-fake-bpy-module==20261001
+fake-bpy-module==20261018
 libigc==1.2.0
 mathutils==5.1.0
 mercantile==1.2.1
