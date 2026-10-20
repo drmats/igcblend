@@ -11,157 +11,23 @@ import bpy
 
 
 
-# Node Group: Emission mixed with Diffuse BDSF for shadows
-# input: color
-# output: shader
-def emissionshadow_node_group(
-    name = "EmissionShadow",
-    mix: float = 0.75,
-):
-    # node group
-    emissionshadow = bpy.data.node_groups.get(name)
-
-    # in-place update for existing node group (don't touch interface)
-    if emissionshadow is not None:
-        emissionshadow.nodes.clear()
-        emissionshadow.links.clear()
-
-    # create new node group if non-existent
-    else:
-        emissionshadow = bpy.data.node_groups.new(
-            type = "ShaderNodeTree",
-            name = name,
-        )
-        emissionshadow.color_tag = "NONE"
-        emissionshadow.description = ""
-        emissionshadow.default_group_node_width = 140
-
-        # input socket: Color
-        in_color_socket = emissionshadow.interface.new_socket(
-            name="Color",
-            in_out="INPUT",
-            socket_type="NodeSocketColor",
-        )
-        in_color_socket.default_value = (0.8, 0.8, 0.8, 1.0)
-        in_color_socket.attribute_domain = "POINT"
-        in_color_socket.default_input = "VALUE"
-        in_color_socket.structure_type = "AUTO"
-
-        # output socket: Shader
-        out_shader_socket = emissionshadow.interface.new_socket(
-            name="Shader",
-            in_out="OUTPUT",
-            socket_type="NodeSocketShader",
-        )
-        out_shader_socket.attribute_domain = "POINT"
-        out_shader_socket.default_input = "VALUE"
-        out_shader_socket.structure_type = "AUTO"
-
-    # shortcuts
-    nodes = emissionshadow.nodes
-    links = emissionshadow.links
-
-    # node: Group Input
-    group_input = nodes.new("NodeGroupInput")
-    group_input.name = "Group Input"
-    group_input.show_options = True
-
-    # node: Emission
-    emission = nodes.new("ShaderNodeEmission")
-    emission.name = "Emission"
-    emission.show_options = True
-    emission.inputs[1].default_value = 1.0 # strength
-
-    # node: Diffuse BSDF
-    diffuse_bsdf = nodes.new("ShaderNodeBsdfDiffuse")
-    diffuse_bsdf.name = "Diffuse BSDF"
-    diffuse_bsdf.show_options = True
-    diffuse_bsdf.inputs[1].default_value = 0.0 # roughness
-    diffuse_bsdf.inputs[2].default_value = (0.0, 0.0, 0.0) # normal
-
-    # node: Mix Shader
-    mix_shader = nodes.new("ShaderNodeMixShader")
-    mix_shader.name = "Mix Shader"
-    mix_shader.show_options = True
-    mix_shader.inputs[0].default_value = mix # fac
-
-    # node: Group Output
-    group_output = nodes.new("NodeGroupOutput")
-    group_output.name = "Group Output"
-    group_output.show_options = True
-    group_output.is_active_output = True
-
-    # locations
-    nodes["Group Input"].location = (-398.0, 2.0)
-    nodes["Emission"].location = (-160.0, 95.0)
-    nodes["Diffuse BSDF"].location = (-160.0, -111.0)
-    nodes["Mix Shader"].location = (93.0, 45.0)
-    nodes["Group Output"].location = (293.0, 32.0)
-
-    # dimensions
-    nodes["Group Input"].width  = 140.0
-    nodes["Group Input"].height = 100.0
-    nodes["Emission"].width  = 140.0
-    nodes["Emission"].height = 100.0
-    nodes["Diffuse BSDF"].width  = 160.0
-    nodes["Diffuse BSDF"].height = 100.0
-    nodes["Mix Shader"].width  = 140.0
-    nodes["Mix Shader"].height = 100.0
-    nodes["Group Output"].width  = 140.0
-    nodes["Group Output"].height = 100.0
-
-    # link: group_input.Color -> emission.Color
-    links.new(
-        nodes["Group Input"].outputs[0],
-        nodes["Emission"].inputs[0],
-    )
-
-    # link: group_input.Color -> diffuse_bsdf.Color
-    links.new(
-        nodes["Group Input"].outputs[0],
-        nodes["Diffuse BSDF"].inputs[0],
-    )
-
-    # link: emission.Emission -> mix_shader.Shader
-    links.new(
-        nodes["Emission"].outputs[0],
-        nodes["Mix Shader"].inputs[1],
-    )
-
-    # link: diffuse_bsdf.BSDF -> mix_shader.Shader
-    links.new(
-        nodes["Diffuse BSDF"].outputs[0],
-        nodes["Mix Shader"].inputs[2],
-    )
-
-    # link: mix_shader.Shader -> group_output.Shader
-    links.new(
-        nodes["Mix Shader"].outputs[0],
-        nodes["Group Output"].inputs[0],
-    )
-
-    return emissionshadow
-
-
-
-
 # Node Group: Height-dependent (Z-axis) texturing.
 # input 1: color
 # input 2: color
 # input 3: min float
 # input 4: max float
 # output: color
-def dualheighttexture_node_group(
+def dualheighttexture_node_group (
     name = "DualHeightTexture",
-    transition = 0.2,
-):
+    transition: float = 0.2,
+) -> bpy.types.NodeTree:
     # node group
     dualheighttexture = bpy.data.node_groups.get(name)
 
     # in-place update for existing node group (don't touch interface)
     if dualheighttexture is not None:
-        dualheighttexture.nodes.clear()
         dualheighttexture.links.clear()
+        dualheighttexture.nodes.clear()
 
     # create new node group if non-existent
     else:
@@ -321,58 +187,476 @@ def dualheighttexture_node_group(
     nodes["Group Output"].width  = 140.0
     nodes["Group Output"].height = 100.0
 
-    # link: group_input.Color -> mix.A
+    # links
     links.new(
         nodes["Group Input"].outputs[0],
         nodes["Mix"].inputs[6],
     )
-
-    # link: group_input.Color -> mix.B
     links.new(
         nodes["Group Input"].outputs[1],
         nodes["Mix"].inputs[7],
     )
-
-    # link: group_input.Min -> map_range.From Min
     links.new(
         nodes["Group Input"].outputs[2],
         nodes["Map Range"].inputs[1],
     )
-
-    # link: group_input.Max -> map_range.From Max
     links.new(
         nodes["Group Input"].outputs[3],
         nodes["Map Range"].inputs[2],
     )
-
-    # link: texture_coordinate.Object -> separate_xyz.Vector
     links.new(
         nodes["Texture Coordinate"].outputs[3],
         nodes["Separate XYZ"].inputs[0],
     )
-
-    # link: separate_xyz.Z -> map_range.Value
     links.new(
         nodes["Separate XYZ"].outputs[2],
         nodes["Map Range"].inputs[0],
     )
-
-    # link: map_range.Result -> color_ramp.Factor
     links.new(
         nodes["Map Range"].outputs[0],
         nodes["Color Ramp"].inputs[0],
     )
-
-    # link: color_ramp.Color -> mix.Factor
     links.new(
         nodes["Color Ramp"].outputs[0],
         nodes["Mix"].inputs[0],
     )
-
-    # link: mix.Result -> group_output.Color
     links.new(
         nodes["Mix"].outputs[2],
         nodes["Group Output"].inputs[0],
     )
 
     return dualheighttexture
+
+
+
+
+# Node Group: Emission mixed with Diffuse BDSF for shadows
+# input: color
+# output: shader
+def emissionshadow_node_group (
+    name = "EmissionShadow",
+    mix: float = 0.75,
+) -> bpy.types.NodeTree:
+    # node group
+    emissionshadow = bpy.data.node_groups.get(name)
+
+    # in-place update for existing node group (don't touch interface)
+    if emissionshadow is not None:
+        emissionshadow.links.clear()
+        emissionshadow.nodes.clear()
+
+    # create new node group if non-existent
+    else:
+        emissionshadow = bpy.data.node_groups.new(
+            type = "ShaderNodeTree",
+            name = name,
+        )
+        emissionshadow.color_tag = "NONE"
+        emissionshadow.description = ""
+        emissionshadow.default_group_node_width = 140
+
+        # input socket: Color
+        in_color_socket = emissionshadow.interface.new_socket(
+            name="Color",
+            in_out="INPUT",
+            socket_type="NodeSocketColor",
+        )
+        in_color_socket.default_value = (0.8, 0.8, 0.8, 1.0)
+        in_color_socket.attribute_domain = "POINT"
+        in_color_socket.default_input = "VALUE"
+        in_color_socket.structure_type = "AUTO"
+
+        # output socket: Shader
+        out_shader_socket = emissionshadow.interface.new_socket(
+            name="Shader",
+            in_out="OUTPUT",
+            socket_type="NodeSocketShader",
+        )
+        out_shader_socket.attribute_domain = "POINT"
+        out_shader_socket.default_input = "VALUE"
+        out_shader_socket.structure_type = "AUTO"
+
+    # shortcuts
+    nodes = emissionshadow.nodes
+    links = emissionshadow.links
+
+    # node: Group Input
+    group_input = nodes.new("NodeGroupInput")
+    group_input.name = "Group Input"
+    group_input.show_options = True
+
+    # node: Emission
+    emission = nodes.new("ShaderNodeEmission")
+    emission.name = "Emission"
+    emission.show_options = True
+    emission.inputs[1].default_value = 1.0 # strength
+
+    # node: Diffuse BSDF
+    diffuse_bsdf = nodes.new("ShaderNodeBsdfDiffuse")
+    diffuse_bsdf.name = "Diffuse BSDF"
+    diffuse_bsdf.show_options = True
+    diffuse_bsdf.inputs[1].default_value = 0.0 # roughness
+    diffuse_bsdf.inputs[2].default_value = (0.0, 0.0, 0.0) # normal
+
+    # node: Mix Shader
+    mix_shader = nodes.new("ShaderNodeMixShader")
+    mix_shader.name = "Mix Shader"
+    mix_shader.show_options = True
+    mix_shader.inputs[0].default_value = mix # fac
+
+    # node: Group Output
+    group_output = nodes.new("NodeGroupOutput")
+    group_output.name = "Group Output"
+    group_output.show_options = True
+    group_output.is_active_output = True
+
+    # locations
+    nodes["Group Input"].location = (-398.0, 2.0)
+    nodes["Emission"].location = (-160.0, 95.0)
+    nodes["Diffuse BSDF"].location = (-160.0, -111.0)
+    nodes["Mix Shader"].location = (93.0, 45.0)
+    nodes["Group Output"].location = (293.0, 32.0)
+
+    # dimensions
+    nodes["Group Input"].width  = 140.0
+    nodes["Group Input"].height = 100.0
+    nodes["Emission"].width  = 140.0
+    nodes["Emission"].height = 100.0
+    nodes["Diffuse BSDF"].width  = 160.0
+    nodes["Diffuse BSDF"].height = 100.0
+    nodes["Mix Shader"].width  = 140.0
+    nodes["Mix Shader"].height = 100.0
+    nodes["Group Output"].width  = 140.0
+    nodes["Group Output"].height = 100.0
+
+    # links
+    links.new(
+        nodes["Group Input"].outputs[0],
+        nodes["Emission"].inputs[0],
+    )
+    links.new(
+        nodes["Group Input"].outputs[0],
+        nodes["Diffuse BSDF"].inputs[0],
+    )
+    links.new(
+        nodes["Emission"].outputs[0],
+        nodes["Mix Shader"].inputs[1],
+    )
+    links.new(
+        nodes["Diffuse BSDF"].outputs[0],
+        nodes["Mix Shader"].inputs[2],
+    )
+    links.new(
+        nodes["Mix Shader"].outputs[0],
+        nodes["Group Output"].inputs[0],
+    )
+
+    return emissionshadow
+
+
+
+
+# Material based on three images.
+def terrain_material (
+    top_image_path: str,
+    middle_image_path: str,
+    bottom_image_path: str,
+    uv_map_name: str = "UVMap",
+    min_point: float = 0.0,
+    middle_point: float = 1300.0,
+    max_point: float = 2200.0,
+    emission_shadow_mix: float = 0.75,
+    height_texture_transition: float = 0.2,
+    name: str = "TerrainMaterial",
+) -> bpy.types.Material:
+    # material
+    terrainmaterial = bpy.data.materials.get(name)
+
+    # in-place update
+    if terrainmaterial is not None:
+        terrainmaterial.node_tree.links.clear()
+        terrainmaterial.node_tree.nodes.clear()
+
+    # create new if non-existent
+    else:
+        terrainmaterial = bpy.data.materials.new(name)
+        if bpy.app.version < (5, 0, 0):
+            terrainmaterial.use_nodes = True
+        terrainmaterial.node_tree.color_tag = "NONE"
+        terrainmaterial.node_tree.description = ""
+        terrainmaterial.node_tree.default_group_node_width = 140
+
+    # load images
+    top_image = bpy.data.images.load(
+        top_image_path,
+        check_existing = True,
+    )
+    middle_image = bpy.data.images.load(
+        middle_image_path,
+        check_existing = True,
+    )
+    bottom_image = bpy.data.images.load(
+        bottom_image_path,
+        check_existing = True,
+    )
+
+    # ensure existence of node groups
+    dualheighttexture = dualheighttexture_node_group(
+        transition = height_texture_transition,
+    )
+    emissionshadow = emissionshadow_node_group(
+        mix = emission_shadow_mix,
+    )
+
+    # shortcuts
+    nodes = terrainmaterial.node_tree.nodes
+    links = terrainmaterial.node_tree.links
+
+    # remove all nodes
+    for node in nodes:
+        nodes.remove(node)
+
+    # node: UV Map
+    uv_map = nodes.new("ShaderNodeUVMap")
+    uv_map.name = "UV Map"
+    uv_map.show_options = True
+    uv_map.from_instancer = False
+    uv_map.uv_map = uv_map_name
+
+    # node: Image Texture Top
+    image_texture_top = nodes.new("ShaderNodeTexImage")
+    image_texture_top.name = "Image Texture Top"
+    image_texture_top.show_options = True
+    image_texture_top.show_texture = True
+    image_texture_top.extension = "CLIP"
+    image_texture_top.image = top_image
+    image_texture_top.image_user.frame_current = 1
+    image_texture_top.image_user.frame_duration = 1
+    image_texture_top.image_user.frame_offset = 16
+    image_texture_top.image_user.frame_start = 1
+    image_texture_top.image_user.tile = 0
+    image_texture_top.image_user.use_auto_refresh = False
+    image_texture_top.image_user.use_cyclic = False
+    image_texture_top.interpolation = "Smart"
+    image_texture_top.projection = "FLAT"
+    image_texture_top.projection_blend = 0.0
+
+    # node: Image Texture Middle
+    image_texture_middle = nodes.new("ShaderNodeTexImage")
+    image_texture_middle.name = "Image Texture Middle"
+    image_texture_middle.show_options = True
+    image_texture_middle.extension = "CLIP"
+    image_texture_middle.image = middle_image
+    image_texture_middle.image_user.frame_current = 0
+    image_texture_middle.image_user.frame_duration = 1
+    image_texture_middle.image_user.frame_offset = 16
+    image_texture_middle.image_user.frame_start = 1
+    image_texture_middle.image_user.tile = 0
+    image_texture_middle.image_user.use_auto_refresh = False
+    image_texture_middle.image_user.use_cyclic = False
+    image_texture_middle.interpolation = "Linear"
+    image_texture_middle.projection = "FLAT"
+    image_texture_middle.projection_blend = 0.0
+
+    # node: Middle Image HSV
+    middle_image_hsv = nodes.new("ShaderNodeHueSaturation")
+    middle_image_hsv.name = "Middle Image HSV"
+    middle_image_hsv.show_options = True
+    middle_image_hsv.inputs[0].default_value = 0.450 # hue
+    middle_image_hsv.inputs[1].default_value = 1.0 # saturation
+    middle_image_hsv.inputs[2].default_value = 1.0 # value
+    middle_image_hsv.inputs[3].default_value = 1.0 # fac
+
+    # node: Image Texture Bottom
+    image_texture_bottom = nodes.new("ShaderNodeTexImage")
+    image_texture_bottom.name = "Image Texture Bottom"
+    image_texture_bottom.show_options = True
+    image_texture_bottom.extension = "CLIP"
+    image_texture_bottom.image = bottom_image
+    image_texture_bottom.image_user.frame_current = 0
+    image_texture_bottom.image_user.frame_duration = 100
+    image_texture_bottom.image_user.frame_offset = 0
+    image_texture_bottom.image_user.frame_start = 1
+    image_texture_bottom.image_user.tile = 0
+    image_texture_bottom.image_user.use_auto_refresh = False
+    image_texture_bottom.image_user.use_cyclic = False
+    image_texture_bottom.interpolation = "Linear"
+    image_texture_bottom.projection = "FLAT"
+    image_texture_bottom.projection_blend = 0.0
+
+    # node: Bottom Image Curves
+    bottom_image_curves = nodes.new("ShaderNodeRGBCurve")
+    bottom_image_curves.name = "Bottom Image Curves"
+    bottom_image_curves.show_options = True
+    bottom_image_curves.mapping.extend = "EXTRAPOLATED"
+    bottom_image_curves.mapping.tone = "STANDARD"
+    bottom_image_curves.mapping.black_level = (0.0, 0.0, 0.0)
+    bottom_image_curves.mapping.white_level = (1.0, 1.0, 1.0)
+    bottom_image_curves.mapping.clip_min_x = 0.0
+    bottom_image_curves.mapping.clip_min_y = 0.0
+    bottom_image_curves.mapping.clip_max_x = 1.0
+    bottom_image_curves.mapping.clip_max_y = 1.0
+    bottom_image_curves.mapping.use_clip = True
+    bottom_image_curves_curve_0 = bottom_image_curves.mapping.curves[0]
+    bottom_image_curves_curve_0_point_0 = bottom_image_curves_curve_0.points[0]
+    bottom_image_curves_curve_0_point_0.location = (0.0, 0.0)
+    bottom_image_curves_curve_0_point_0.handle_type = "AUTO"
+    bottom_image_curves_curve_0_point_1 = bottom_image_curves_curve_0.points[1]
+    bottom_image_curves_curve_0_point_1.location = (1.0, 1.0)
+    bottom_image_curves_curve_0_point_1.handle_type = "AUTO"
+    bottom_image_curves_curve_1 = bottom_image_curves.mapping.curves[1]
+    bottom_image_curves_curve_1_point_0 = bottom_image_curves_curve_1.points[0]
+    bottom_image_curves_curve_1_point_0.location = (0.0, 0.0)
+    bottom_image_curves_curve_1_point_0.handle_type = "AUTO"
+    bottom_image_curves_curve_1_point_1 = bottom_image_curves_curve_1.points[1]
+    bottom_image_curves_curve_1_point_1.location = (1.0, 1.0)
+    bottom_image_curves_curve_1_point_1.handle_type = "AUTO"
+    bottom_image_curves_curve_2 = bottom_image_curves.mapping.curves[2]
+    bottom_image_curves_curve_2_point_0 = bottom_image_curves_curve_2.points[0]
+    bottom_image_curves_curve_2_point_0.location = (0.0, 0.0)
+    bottom_image_curves_curve_2_point_0.handle_type = "AUTO"
+    bottom_image_curves_curve_2_point_1 = bottom_image_curves_curve_2.points[1]
+    bottom_image_curves_curve_2_point_1.location = (0.55, 0.30)
+    bottom_image_curves_curve_2_point_1.handle_type = "AUTO"
+    bottom_image_curves_curve_2_point_2 = bottom_image_curves_curve_2.points.new(1.0, 1.0)
+    bottom_image_curves_curve_2_point_2.handle_type = "AUTO"
+    bottom_image_curves_curve_3 = bottom_image_curves.mapping.curves[3]
+    bottom_image_curves_curve_3_point_0 = bottom_image_curves_curve_3.points[0]
+    bottom_image_curves_curve_3_point_0.location = (0.0, 0.0)
+    bottom_image_curves_curve_3_point_0.handle_type = "AUTO"
+    bottom_image_curves_curve_3_point_1 = bottom_image_curves_curve_3.points[1]
+    bottom_image_curves_curve_3_point_1.location = (0.65, 0.25)
+    bottom_image_curves_curve_3_point_1.handle_type = "AUTO"
+    bottom_image_curves_curve_3_point_2 = bottom_image_curves_curve_3.points.new(1.0, 1.0)
+    bottom_image_curves_curve_3_point_2.handle_type = "AUTO"
+    bottom_image_curves.mapping.update()
+    bottom_image_curves.inputs[0].default_value = 1.0 # fac
+
+    # node: Bottom Image HSV
+    bottom_image_hsv = nodes.new("ShaderNodeHueSaturation")
+    bottom_image_hsv.name = "Bottom Image HSV"
+    bottom_image_hsv.show_options = True
+    bottom_image_hsv.inputs[0].default_value = 0.55 # hue
+    bottom_image_hsv.inputs[1].default_value = 0.90 # saturation
+    bottom_image_hsv.inputs[2].default_value = 0.50 # value
+    bottom_image_hsv.inputs[3].default_value = 1.0 # fac
+
+    # node: Upper Dual Height Texture
+    group_001 = nodes.new("ShaderNodeGroup")
+    group_001.name = "Upper Dual Height Texture"
+    group_001.show_options = True
+    group_001.node_tree = dualheighttexture
+    group_001.inputs[2].default_value = min_point
+    group_001.inputs[3].default_value = max_point
+
+    # node: Lower Dual Height Texture
+    group_002 = nodes.new("ShaderNodeGroup")
+    group_002.name = "Lower Dual Height Texture"
+    group_002.show_options = True
+    group_002.node_tree = dualheighttexture
+    group_002.inputs[2].default_value = 0.0
+    group_002.inputs[3].default_value = middle_point
+
+    # node: Outer Emission Shadow
+    group_003 = nodes.new("ShaderNodeGroup")
+    group_003.name = "Outer Emission Shadow"
+    group_003.show_options = True
+    group_003.node_tree = emissionshadow
+
+    # node: Material Output
+    material_output = nodes.new("ShaderNodeOutputMaterial")
+    material_output.name = "Material Output"
+    material_output.show_options = True
+    material_output.is_active_output = True
+    material_output.target = "ALL"
+    material_output.inputs[2].default_value = (0.0, 0.0, 0.0) # displacement
+    material_output.inputs[3].default_value = 0.0 # thickness
+
+    # locations
+    nodes["UV Map"].location = (-1131.0, -705.0)
+    nodes["Image Texture Top"].location = (-770.0, -345.0)
+    nodes["Image Texture Middle"].location = (-770.0, -638.0)
+    nodes["Middle Image HSV"].location = (-338.0, -729.0)
+    nodes["Image Texture Bottom"].location = (-768.0, -940.0)
+    nodes["Bottom Image Curves"].location = (-398.0, -930.0)
+    nodes["Bottom Image HSV"].location = (-7.0, -1119.0)
+    nodes["Upper Dual Height Texture"].location = (2.0, -591.0)
+    nodes["Lower Dual Height Texture"].location = (267.0, -824.0)
+    nodes["Outer Emission Shadow"].location = (480.0, -849.0)
+    nodes["Material Output"].location = (711.0, -852.0)
+
+    # dimensions
+    nodes["UV Map"].width  = 160.0
+    nodes["UV Map"].height = 100.0
+    nodes["Image Texture Top"].width  = 240.0
+    nodes["Image Texture Top"].height = 100.0
+    nodes["Image Texture Middle"].width  = 240.0
+    nodes["Image Texture Middle"].height = 100.0
+    nodes["Middle Image HSV"].width  = 160.0
+    nodes["Middle Image HSV"].height = 100.0
+    nodes["Image Texture Bottom"].width  = 240.0
+    nodes["Image Texture Bottom"].height = 100.0
+    nodes["Bottom Image Curves"].width  = 240.0
+    nodes["Bottom Image Curves"].height = 100.0
+    nodes["Bottom Image HSV"].width  = 160.0
+    nodes["Bottom Image HSV"].height = 100.0
+    nodes["Upper Dual Height Texture"].width  = 140.0
+    nodes["Upper Dual Height Texture"].height = 100.0
+    nodes["Lower Dual Height Texture"].width  = 140.0
+    nodes["Lower Dual Height Texture"].height = 100.0
+    nodes["Outer Emission Shadow"].width  = 140.0
+    nodes["Outer Emission Shadow"].height = 100.0
+    nodes["Material Output"].width  = 140.0
+    nodes["Material Output"].height = 100.0
+
+    # links
+    links.new(
+        nodes["UV Map"].outputs[0],
+        nodes["Image Texture Top"].inputs[0]
+    )
+    links.new(
+        nodes["UV Map"].outputs[0],
+        nodes["Image Texture Middle"].inputs[0]
+    )
+    links.new(
+        nodes["UV Map"].outputs[0],
+        nodes["Image Texture Bottom"].inputs[0]
+    )
+    links.new(
+        nodes["Image Texture Top"].outputs[0],
+        nodes["Upper Dual Height Texture"].inputs[0]
+    )
+    links.new(
+        nodes["Image Texture Middle"].outputs[0],
+        nodes["Middle Image HSV"].inputs[4]
+    )
+    links.new(
+        nodes["Middle Image HSV"].outputs[0],
+        nodes["Upper Dual Height Texture"].inputs[1]
+    )
+    links.new(
+        nodes["Image Texture Bottom"].outputs[0],
+        nodes["Bottom Image Curves"].inputs[1]
+    )
+    links.new(
+        nodes["Bottom Image Curves"].outputs[0],
+        nodes["Bottom Image HSV"].inputs[4]
+    )
+    links.new(
+        nodes["Upper Dual Height Texture"].outputs[0],
+        nodes["Lower Dual Height Texture"].inputs[0]
+    )
+    links.new(
+        nodes["Bottom Image HSV"].outputs[0],
+        nodes["Lower Dual Height Texture"].inputs[1]
+    )
+    links.new(
+        nodes["Lower Dual Height Texture"].outputs[0],
+        nodes["Outer Emission Shadow"].inputs[0]
+    )
+    links.new(
+        nodes["Outer Emission Shadow"].outputs[0],
+        nodes["Material Output"].inputs[0]
+    )
+
+    return terrainmaterial
