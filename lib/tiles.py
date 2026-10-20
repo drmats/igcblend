@@ -9,7 +9,10 @@ from mercantile import bounds, children, Tile, tiles
 from shapely import box, Polygon
 from shapely.ops import transform
 
-from lib.projections import project_to_3857, project_to_4326
+from lib.projections import (
+    geo2d_to_mercator2d,
+    mercator2d_to_geo2d,
+)
 
 
 
@@ -24,7 +27,7 @@ def get_tiles_with_padding (
         padding, cap_style = "square", join_style = "mitre",
     )
     return list(tiles(
-        *transform(project_to_4326, bbox).bounds,
+        *transform(mercator2d_to_geo2d, bbox).bounds,
         zooms = zoom,
         truncate = True,
     ))
@@ -52,7 +55,7 @@ def tiles_subdivide (tiles: list[Tile], steps: int = 2) -> list[Tile]:
 def tile_to_polygon (tile: Tile) -> Polygon:
     tilebounds = bounds(tile)
     return transform(
-        project_to_3857,
+        geo2d_to_mercator2d,
         box(
             tilebounds.west,
             tilebounds.south,

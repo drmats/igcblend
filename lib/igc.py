@@ -7,7 +7,7 @@ https://github.com/drmats
 from libigc import Flight
 from shapely import LineString
 
-from lib.projections import project_to_3857
+from lib.projections import geo2d_to_mercator2d
 
 
 
@@ -16,7 +16,7 @@ from lib.projections import project_to_3857
 def parse_igc (flight_file: str) -> tuple[Flight, LineString]:
     flight = Flight.create_from_file(flight_file)
     coords_3857 = [
-        project_to_3857(fix.lon, fix.lat, fix.alt)
+        geo2d_to_mercator2d(fix.lon, fix.lat, fix.alt)
             for fix in flight.fixes
     ]
     return flight, LineString(coords_3857)
