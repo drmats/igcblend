@@ -14,7 +14,10 @@ import bpy
 # Node Group: Emission mixed with Diffuse BDSF for shadows
 # input: color
 # output: shader
-def emissionshadow_node_group(name = "EmissionShadow"):
+def emissionshadow_node_group(
+    name = "EmissionShadow",
+    mix: float = 0.75,
+):
     # node tree
     emissionshadow = bpy.data.node_groups.new(
         type = "ShaderNodeTree",
@@ -62,7 +65,7 @@ def emissionshadow_node_group(name = "EmissionShadow"):
     mix_shader = emissionshadow.nodes.new("ShaderNodeMixShader")
     mix_shader.name = "Mix Shader"
     mix_shader.show_options = True
-    mix_shader.inputs[0].default_value = 0.75 # fac
+    mix_shader.inputs[0].default_value = mix # fac
 
     # node group input
     group_input = emissionshadow.nodes.new("NodeGroupInput")
