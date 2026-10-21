@@ -17,7 +17,7 @@ import bpy
 # input 3: min float
 # input 4: max float
 # output: color
-def dualheighttexture_node_group (
+def create_dualheighttexture_node_group (
     name = "DualHeightTexture",
     transition: float = 0.2,
 ) -> bpy.types.NodeTree:
@@ -233,7 +233,7 @@ def dualheighttexture_node_group (
 # Node Group: Emission mixed with Diffuse BDSF for shadows
 # input: color
 # output: shader
-def emissionshadow_node_group (
+def create_emissionshadow_node_group (
     name = "EmissionShadow",
     mix: float = 0.75,
 ) -> bpy.types.NodeTree:
@@ -357,7 +357,7 @@ def emissionshadow_node_group (
 
 
 # Material based on three images.
-def terrain_material (
+def create_terrain_material (
     top_image_path: str,
     middle_image_path: str,
     bottom_image_path: str,
@@ -401,10 +401,10 @@ def terrain_material (
     )
 
     # ensure existence of node groups
-    dualheighttexture = dualheighttexture_node_group(
+    dualheighttexture = create_dualheighttexture_node_group(
         transition = height_texture_transition,
     )
-    emissionshadow = emissionshadow_node_group(
+    emissionshadow = create_emissionshadow_node_group(
         mix = emission_shadow_mix,
     )
 
@@ -660,3 +660,16 @@ def terrain_material (
     )
 
     return terrainmaterial
+
+
+
+
+# assign material to first slot (create it if doesn't exist)
+def assign_material_to_mesh (
+    material: bpy.types.Material,
+    mesh: bpy.types.Mesh,
+) -> None:
+    if len(mesh.materials) == 0:
+        mesh.materials.append(material)
+    else:
+        mesh.materials[0] = material
