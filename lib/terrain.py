@@ -108,7 +108,7 @@ def apply_terrarium_displace (
     # read terrarium image
     source = bpy.data.images.load(
         terrarium_image_path,
-        check_existing=True,
+        check_existing = True,
     )
 
     # check image dimensions

@@ -41,9 +41,9 @@ def dualheighttexture_node_group (
 
         # input socket: Color
         in_color_socket_1 = dualheighttexture.interface.new_socket(
-            name="Color",
-            in_out="INPUT",
-            socket_type="NodeSocketColor",
+            name = "Color",
+            in_out = "INPUT",
+            socket_type = "NodeSocketColor",
         )
         in_color_socket_1.default_value = (0.8, 0.8, 0.8, 1.0)
         in_color_socket_1.attribute_domain = "POINT"
@@ -52,9 +52,9 @@ def dualheighttexture_node_group (
 
         # input socket: Color
         in_color_socket_2 = dualheighttexture.interface.new_socket(
-            name="Color",
-            in_out="INPUT",
-            socket_type="NodeSocketColor",
+            name = "Color",
+            in_out = "INPUT",
+            socket_type = "NodeSocketColor",
         )
         in_color_socket_2.default_value = (0.8, 0.8, 0.8, 1.0)
         in_color_socket_2.attribute_domain = "POINT"
@@ -63,9 +63,9 @@ def dualheighttexture_node_group (
 
         # input socket: Min
         in_min_socket = dualheighttexture.interface.new_socket(
-            name="Min",
-            in_out="INPUT",
-            socket_type="NodeSocketFloat",
+            name = "Min",
+            in_out = "INPUT",
+            socket_type = "NodeSocketFloat",
         )
         in_min_socket.default_value = 0.0
         in_min_socket.min_value = -10000.0
@@ -77,9 +77,9 @@ def dualheighttexture_node_group (
 
         # input socket: Max
         in_max_socket = dualheighttexture.interface.new_socket(
-            name="Max",
-            in_out="INPUT",
-            socket_type="NodeSocketFloat",
+            name = "Max",
+            in_out = "INPUT",
+            socket_type = "NodeSocketFloat",
         )
         in_max_socket.default_value = 2000.0
         in_max_socket.min_value = -10000.0
@@ -91,9 +91,9 @@ def dualheighttexture_node_group (
 
         # output socket: Color
         out_color_socket = dualheighttexture.interface.new_socket(
-            name="Color",
-            in_out="OUTPUT",
-        socket_type="NodeSocketColor",
+            name = "Color",
+            in_out = "OUTPUT",
+            socket_type = "NodeSocketColor",
         )
         out_color_socket.default_value = (0.8, 0.8, 0.8, 1.0)
         out_color_socket.attribute_domain = "POINT"
@@ -257,9 +257,9 @@ def emissionshadow_node_group (
 
         # input socket: Color
         in_color_socket = emissionshadow.interface.new_socket(
-            name="Color",
-            in_out="INPUT",
-            socket_type="NodeSocketColor",
+            name = "Color",
+            in_out = "INPUT",
+            socket_type = "NodeSocketColor",
         )
         in_color_socket.default_value = (0.8, 0.8, 0.8, 1.0)
         in_color_socket.attribute_domain = "POINT"
@@ -268,9 +268,9 @@ def emissionshadow_node_group (
 
         # output socket: Shader
         out_shader_socket = emissionshadow.interface.new_socket(
-            name="Shader",
-            in_out="OUTPUT",
-            socket_type="NodeSocketShader",
+            name = "Shader",
+            in_out = "OUTPUT",
+            socket_type = "NodeSocketShader",
         )
         out_shader_socket.attribute_domain = "POINT"
         out_shader_socket.default_input = "VALUE"

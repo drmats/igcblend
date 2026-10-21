@@ -85,7 +85,7 @@ def download_xcontest_topo_tile (
     download_file(
         f"https://topo.xcontest.app/elev/{z}/{x}/{y}.jpg",
         f"{destination_path}/xcontest.{z}.{x}.{y}.jpg",
-        headers={
+        headers = {
             **browser_request_headers(),
             "Referer": "https://www.xcontest.org/",
             "Origin":"https://www.xcontest.org",
