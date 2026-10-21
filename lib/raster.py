@@ -14,7 +14,7 @@ def merge_tiles (
     image_array: list[list[str]],
     output_path: str,
     quality: int = 95,
-) -> None:
+) -> str:
     """
     Merges a grid of images from the given two-dimensional array
     into a single output file.
@@ -74,3 +74,6 @@ def merge_tiles (
     # save
     canvas.save(output_path, quality = quality)
     canvas.close()
+
+    # convenience output - created filename path
+    return output_path

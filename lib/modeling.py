@@ -82,3 +82,30 @@ def merge_planes (
     clear_selection()
 
     return merged_obj
+
+
+
+
+# ...
+def build_3d_curve (
+    point_data: list[tuple[float, float, float]],
+    name = "Curve",
+    diameter = 10,
+    resolution = 3,
+):
+    curve = bpy.data.curves.new(name + "_BezierCurve", type = "CURVE")
+    curve.dimensions = "3D"
+    curve.resolution_u = 12
+    curve.bevel_depth = diameter / 2
+    curve.bevel_resolution = resolution
+
+    spline = curve.splines.new("BEZIER")
+    spline.bezier_points.add(len(point_data) - 1)
+
+    for bp, co in zip(spline.bezier_points, point_data):
+        bp.co = co
+        bp.handle_left_type = "AUTO"
+        bp.handle_right_type = "AUTO"
+
+    obj = bpy.data.objects.new(name, curve)
+    bpy.context.collection.objects.link(obj)

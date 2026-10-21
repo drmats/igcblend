@@ -6,22 +6,24 @@ https://github.com/drmats
 
 import bpy # type: ignore
 from dataclasses import dataclass
-from numpy import float64
 from shapely import get_coordinates
+from shapely.geometry.base import BaseGeometry
 
 
 
 
 # extract coordinates from geometry and add z = 0.0
-def flat_coords_3d (geometry) -> list[tuple[float, float, float]]:
-    return [(x, y, float64(0.0)) for x, y in get_coordinates(geometry)]
+def flat_coords_3d (
+    geometry: BaseGeometry,
+) -> list[tuple[float, float, float]]:
+    return [(x, y, 0.0) for x, y in get_coordinates(geometry)]
 
 
 
 
 # 2d translate points (don't move in `z`)
 def translate (
-    coords_3d: list[tuple[float, float, float]],
+    coords_3d: list[tuple[float, ...]],
     by = (0, 0),
 ) -> list[tuple[float, float, float]]:
     return [(x - by[0], y - by[1], z) for x, y, z in coords_3d]

@@ -4,6 +4,7 @@
 https://github.com/drmats
 """
 
+from typing import Callable
 import os
 import urllib.request
 
@@ -47,14 +48,14 @@ def download_file (
 
 # ...
 def download_terrarium_tile (
-    z: int,
-    x: int,
-    y: int,
-    destination_path: str,
+    z: int, x: int, y: int,
+    destination: Callable[[int, int, int], str] = (
+        lambda z, x, y: f"terrarium.{z}.{x}.{y}.png"
+    ),
 ) -> None:
     download_file(
         f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        f"{destination_path}/terrarium.{z}.{x}.{y}.png",
+        destination(z, x, y),
     )
 
 
@@ -62,14 +63,14 @@ def download_terrarium_tile (
 
 # ...
 def download_satellite_tile (
-    z: int,
-    x: int,
-    y: int,
-    destination_path: str,
+    z: int, x: int, y: int,
+    destination: Callable[[int, int, int], str] = (
+        lambda z, x, y: f"satellite.{z}.{x}.{y}.jpg"
+    ),
 ) -> None:
     download_file(
         f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        f"{destination_path}/satellite.{z}.{x}.{y}.jpg",
+        destination(z, x, y),
     )
 
 
@@ -77,14 +78,14 @@ def download_satellite_tile (
 
 # ...
 def download_xcontest_topo_tile (
-    z: int,
-    x: int,
-    y: int,
-    destination_path: str,
+    z: int, x: int, y: int,
+    destination: Callable[[int, int, int], str] = (
+        lambda z, x, y: f"xcontest.{z}.{x}.{y}.jpg"
+    ),
 ) -> None:
     download_file(
         f"https://topo.xcontest.app/elev/{z}/{x}/{y}.jpg",
-        f"{destination_path}/xcontest.{z}.{x}.{y}.jpg",
+        destination(z, x, y),
         headers = {
             **browser_request_headers(),
             "Referer": "https://www.xcontest.org/",
@@ -97,12 +98,12 @@ def download_xcontest_topo_tile (
 
 # ...
 def download_open_topo_tile (
-    z: int,
-    x: int,
-    y: int,
-    destination_path: str,
+    z: int, x: int, y: int,
+    destination: Callable[[int, int, int], str] = (
+        lambda z, x, y: f"opentopo.{z}.{x}.{y}.png"
+    ),
 ) -> None:
     download_file(
         f"https://tile.opentopomap.org/{z}/{x}/{y}.png",
-        f"{destination_path}/opentopo.{z}.{x}.{y}.png",
+        destination(z, x, y),
     )
