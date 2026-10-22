@@ -8,7 +8,10 @@ https://github.com/drmats
 import bpy # type: ignore
 from typing import cast
 
-from lib.layout import clear_selection, select_object
+from lib.layout import (
+    clear_selection,
+    select_object,
+)
 
 
 
@@ -17,12 +20,13 @@ from lib.layout import clear_selection, select_object
 def build_plane (
     point_data: list[tuple[float, float, float]],
     name: str = "Plane",
-):
+) -> tuple[bpy.types.Object, bpy.types.Mesh]:
     mesh_data = bpy.data.meshes.new(name = name + "_Mesh")
     plane_object = bpy.data.objects.new(name = name, object_data = mesh_data)
     mesh_data.from_pydata(point_data, [], [(0, 1, 2, 3)])
     mesh_data.update()
     bpy.context.collection.objects.link(plane_object)
+    return (plane_object, mesh_data)
 
 
 
