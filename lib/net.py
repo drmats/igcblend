@@ -7,6 +7,7 @@ https://github.com/drmats
 from typing import Callable
 import os
 import urllib.request
+from mercantile import Tile
 
 
 
@@ -47,15 +48,21 @@ def download_file (
 
 
 # ...
+type TileNameFunction = Callable[[Tile], str]
+
+
+
+
+# ...
 def download_terrarium_tile (
-    z: int, x: int, y: int,
-    destination: Callable[[int, int, int], str] = (
-        lambda z, x, y: f"terrarium.{z}.{x}.{y}.png"
+    t: Tile,
+    destination: TileNameFunction = (
+        lambda t: f"terrarium.{t.z}.{t.x}.{t.y}.png"
     ),
 ) -> None:
     download_file(
-        f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        destination(z, x, y),
+        f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{t.z}/{t.x}/{t.y}.png",
+        destination(t),
     )
 
 
@@ -63,14 +70,14 @@ def download_terrarium_tile (
 
 # ...
 def download_satellite_tile (
-    z: int, x: int, y: int,
-    destination: Callable[[int, int, int], str] = (
-        lambda z, x, y: f"satellite.{z}.{x}.{y}.jpg"
+    t: Tile,
+    destination: TileNameFunction = (
+        lambda t: f"satellite.{t.z}.{t.x}.{t.y}.jpg"
     ),
 ) -> None:
     download_file(
-        f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        destination(z, x, y),
+        f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{t.z}/{t.y}/{t.x}",
+        destination(t),
     )
 
 
@@ -78,14 +85,14 @@ def download_satellite_tile (
 
 # ...
 def download_xcontest_topo_tile (
-    z: int, x: int, y: int,
-    destination: Callable[[int, int, int], str] = (
-        lambda z, x, y: f"xcontest.{z}.{x}.{y}.jpg"
+    t: Tile,
+    destination: TileNameFunction = (
+        lambda t: f"xcontest.{t.z}.{t.x}.{t.y}.jpg"
     ),
 ) -> None:
     download_file(
-        f"https://topo.xcontest.app/elev/{z}/{x}/{y}.jpg",
-        destination(z, x, y),
+        f"https://topo.xcontest.app/elev/{t.z}/{t.x}/{t.y}.jpg",
+        destination(t),
         headers = {
             **browser_request_headers(),
             "Referer": "https://www.xcontest.org/",
@@ -98,12 +105,12 @@ def download_xcontest_topo_tile (
 
 # ...
 def download_open_topo_tile (
-    z: int, x: int, y: int,
-    destination: Callable[[int, int, int], str] = (
-        lambda z, x, y: f"opentopo.{z}.{x}.{y}.png"
+    t: Tile,
+    destination: TileNameFunction = (
+        lambda t: f"opentopo.{t.z}.{t.x}.{t.y}.png"
     ),
 ) -> None:
     download_file(
-        f"https://tile.opentopomap.org/{z}/{x}/{y}.png",
-        destination(z, x, y),
+        f"https://tile.opentopomap.org/{t.z}/{t.x}/{t.y}.png",
+        destination(t),
     )

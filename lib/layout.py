@@ -12,14 +12,17 @@ from typing import cast
 
 
 # ...
-def get_mesh (object_name: str) -> tuple[bpy.types.Object, bpy.types.Mesh]:
+def get_obj_mesh (object_name: str) -> tuple[bpy.types.Object, bpy.types.Mesh]:
     obj = bpy.data.objects.get(object_name)
+
     if obj is None:
         raise ValueError(f"Object '{object_name}' does not exist.")
     if obj.type != "MESH":
         raise ValueError(f"Object '{object_name}' is not a Mesh.")
+
     obj = cast(bpy.types.Object, obj)
     mesh = cast(bpy.types.Mesh, obj.data)
+
     return (obj, mesh)
 
 

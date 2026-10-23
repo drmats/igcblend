@@ -5,18 +5,31 @@ https://github.com/drmats
 """
 
 from libigc import Flight
-from shapely import LineString
 
-from lib.projections import geo2d_to_mercator2d
-
+from lib.projections import geo3d_to_ecef
 
 
 
-# read igc, project to mercator, construct LineString
-def parse_igc (flight_file: str) -> tuple[Flight, LineString]:
+
+# read IGC file and extract coordinates
+def parse_igc (
+    flight_file: str,
+) -> tuple[
+    Flight,
+    list[tuple[float, float, float]],
+    list[tuple[float, float, float]],
+]:
     flight = Flight.create_from_file(flight_file)
-    coords_3857 = [
-        geo2d_to_mercator2d(fix.lon, fix.lat, fix.alt)
+    coords_geo3d = [
+        (fix.lon, fix.lat, fix.alt)
             for fix in flight.fixes
     ]
-    return flight, LineString(coords_3857)
+    coords_ecef = [
+        geo3d_to_ecef(fix.lon, fix.lat, fix.alt)
+            for fix in flight.fixes
+    ]
+    return (
+        flight,
+        coords_geo3d,
+        coords_ecef,
+    )

@@ -7,7 +7,7 @@ https://github.com/drmats
 
 import bpy # type: ignore
 
-from lib.simplegeom import compute_2d_bounds
+from lib.simplegeom import compute_2d_bounds_with_range
 
 
 
@@ -31,7 +31,7 @@ def create_top_projected_uv (
     mesh.uv_layers.active = uv_layer
 
     # compute geometry (x, y) bounds
-    bounds = compute_2d_bounds(mesh)
+    bounds = compute_2d_bounds_with_range(mesh)
     if bounds.range_x == 0 or bounds.range_y == 0:
         raise ValueError("Plane has zero size.")
 
@@ -56,7 +56,7 @@ def adjust_uv_for_pixel_centers (
     texture_height: int,
 ) -> None:
     for mesh_uv_loop in uv_layer.data:
-        (u, v) = mesh_uv_loop.uv
+        u, v = mesh_uv_loop.uv
         u = u * (texture_width - 1) / texture_width + 0.5 / texture_width
         v = v * (texture_height - 1) / texture_height + 0.5 / texture_height
         mesh_uv_loop.uv = (u, v)

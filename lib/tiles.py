@@ -4,32 +4,29 @@
 https://github.com/drmats
 """
 
-from typing import Callable
-from mercantile import bounds, children, Tile, tiles
+from mercantile import (
+    bounds,
+    children,
+    Tile,
+    tiles,
+)
 from shapely import box
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry import Polygon
 from shapely.ops import transform
 
-from lib.projections import (
-    geo2d_to_mercator2d,
-    mercator2d_to_geo2d,
-)
+from lib.projections import geo2d_to_mercator2d
+from lib.net import TileNameFunction
 
 
 
 
-# compute smallest tile set (z, x, y) containing geometry with some padding
-def get_tiles_with_padding (
-    geometry: BaseGeometry,
-    padding: int = 1000,
+# compute smallest tile set (z, x, y) covering passed bounds
+def get_tilelist (
+    minx: float, miny: float, maxx: float, maxy: float,
     zoom: int = 15,
 ) -> list[Tile]:
-    bbox = box(*geometry.bounds).buffer(
-        padding, cap_style = "square", join_style = "mitre",
-    )
     return list(tiles(
-        *transform(mercator2d_to_geo2d, bbox).bounds,
+        minx, miny, maxx, maxy,
         zooms = zoom,
         truncate = True,
     ))
@@ -54,7 +51,7 @@ def tiles_subdivide (tiles: list[Tile], steps: int = 2) -> list[Tile]:
 
 
 # convert tile to polygon (mercator)
-def tile_to_polygon (tile: Tile) -> Polygon:
+def tile_to_terrarium_polygon (tile: Tile) -> Polygon:
     tilebounds = bounds(tile)
     return transform(
         geo2d_to_mercator2d,
@@ -72,20 +69,23 @@ def tile_to_polygon (tile: Tile) -> Polygon:
 # get flat tile list and return list of rows with filenames
 def tile_list_to_image_array (
     tiles: list[Tile],
-    namefunction: Callable[[int, int, int], str] = (
-        lambda z, x, y: f"{z}.{x}.{y}.jpg"
-    ),
+    namefunction: TileNameFunction = lambda t: f"{t.z}.{t.x}.{t.y}.jpg",
 ) -> list[list[str]]:
     if not tiles or not tiles[0]:
         raise ValueError("'tiles' is empty.")
+
     images = dict()
+
     for tile in tiles:
         if not tile.y in images:
             images[tile.y] = dict()
-        images[tile.y][tile.x] = namefunction(tile.z, tile.x, tile.y)
+        images[tile.y][tile.x] = namefunction(tile)
+
     image_array = []
+
     for y, row in enumerate(sorted(images)):
         image_array.append([])
         for col in sorted(images[row]):
             image_array[y].append(images[row][col])
+
     return image_array

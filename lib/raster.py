@@ -23,7 +23,7 @@ def merge_tiles (
     :param output_path: target file path for the merged image
     :param quality: output compression quality
     :raises ValueError: If the array is empty, has uneven rows, or the images
-    have different dimensions.
+        have different dimensions.
     """
 
     if not image_array or not image_array[0]:

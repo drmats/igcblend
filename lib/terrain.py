@@ -6,17 +6,47 @@ https://github.com/drmats
 """
 
 import bpy # type: ignore
+import numpy
 from typing import cast
+import hashlib
 
 from lib.layout import (
-    get_mesh,
     clear_selection,
+    get_obj_mesh,
     select_object,
 )
 from lib.uv import (
-    remove_all_uv_layers,
-    create_top_projected_uv,
     adjust_uv_for_pixel_centers,
+    create_top_projected_uv,
+    remove_all_uv_layers,
+)
+from lib.tiles import (
+    get_tilelist,
+    tile_to_terrarium_polygon,
+    tile_list_to_image_array,
+    tiles_subdivide,
+)
+from lib.net import (
+    download_open_topo_tile,
+    download_satellite_tile,
+    download_terrarium_tile,
+    download_xcontest_topo_tile,
+    TileNameFunction,
+)
+from lib.simplegeom import get_flat_coords_3d
+from lib.modeling import (
+    build_plane,
+    merge_planes,
+)
+from lib.projections import (
+    CRSTransform,
+    terrarium_to_ecef,
+)
+from lib.fs import delete_file
+from lib.raster import merge_tiles
+from lib.shading import (
+    assign_material_to_mesh,
+    create_terrain_material,
 )
 
 
@@ -99,7 +129,7 @@ def apply_terrarium_displace (
     displace_strength: float = 1.0,
 ) -> None:
     # find object
-    obj, mesh = get_mesh(object_name)
+    obj, mesh = get_obj_mesh(object_name)
 
     # make it selected for all subsequent operations
     clear_selection()
@@ -121,7 +151,7 @@ def apply_terrarium_displace (
 
     # subdivide
     bpy.ops.object.mode_set(mode = "EDIT")
-    bpy.ops.mesh.subdivide(number_cuts = int((width-1)/cuts_ratio))
+    bpy.ops.mesh.subdivide(number_cuts = int((width - 1) / cuts_ratio))
     bpy.ops.object.mode_set(mode = "OBJECT")
 
     # UV - create new map (adjusted for pixel centers)
@@ -176,3 +206,171 @@ def apply_terrarium_displace (
 
     # leave nothing selected
     clear_selection()
+
+
+
+
+# build terrain object with material
+def build_terrain (
+    geo2d_bounds: tuple[float, float, float, float],
+    crs_transform: CRSTransform,
+    tiles_path: str = "/tmp",
+    terrain_name: str = "Terrain",
+    tilename_prefix: str = "TerrainTile",
+    delete_source_tiles: bool = True,
+) -> tuple[bpy.types.Object, bpy.types.Mesh]:
+    """
+    Downloads appropriate tileset of terrarium, satellite and topographic
+    map tiles and build 3D terrain object with textured material out of it.
+
+    :param bounds: list[minx, miny, maxx, maxy] (west, south, east, north)
+        floats representing terrain boundary (decimal degrees, geo2D, lon-lat)
+    :param ecef_shift: 3D vector (x, y, z) by which terrain is translated
+    :param terrain_name: name for created terrain object
+    :param tilename_prefix: name prefix for temporary tile planes
+        representing one terrain tile
+    """
+
+    # tile naming functions
+    terrarium_tile_name: TileNameFunction = (
+        lambda t: f"{tiles_path}/terrarium.{t.z}.{t.x}.{t.y}.png"
+    )
+    satellite_tile_name: TileNameFunction = (
+        lambda t: f"{tiles_path}/sat.{t.z}.{t.x}.{t.y}.jpg"
+    )
+    xcontest_tile_name: TileNameFunction = (
+        lambda t: f"{tiles_path}/xc.{t.z}.{t.x}.{t.y}.jpg"
+    )
+    opentopo_tile_name: TileNameFunction = (
+        lambda t: f"{tiles_path}/topo.{t.z}.{t.x}.{t.y}.png"
+    )
+
+    # create array with all tile coordinates covering given bounds
+    tiles_for_terrain = get_tilelist(*geo2d_bounds, zoom = 15)
+
+    # download terrarium elevation tiles
+    terrarium_tiles_download_success = True
+    for tile in tiles_for_terrain:
+        try:
+            download_terrarium_tile(tile, terrarium_tile_name)
+        except Exception as e:
+            print(f"Tile download failed: {terrarium_tile_name(tile)}")
+            terrarium_tiles_download_success = False
+    if not terrarium_tiles_download_success:
+        raise Exception("Terrain tileset download error.")
+
+    # derive tile coords from `tiles_for_terrain`
+    # in order to maintain the same padding expressed in tile widths
+    tiles_for_materials = tiles_subdivide(tiles_for_terrain, steps = 2)
+
+    # download sat and topo image tiles
+    texture_tiles_download_success = True
+    for tile in tiles_for_materials:
+        try:
+            download_satellite_tile(tile, satellite_tile_name)
+            download_xcontest_topo_tile(tile, xcontest_tile_name)
+            download_open_topo_tile(tile, opentopo_tile_name)
+        except Exception as e:
+            print(f"Tile download failed: {terrarium_tile_name(tile)}")
+            texture_tiles_download_success = False
+    if not texture_tiles_download_success:
+        raise Exception("Texture tileset download error.")
+
+    # build all terrarium planes based on downloaded terrarium elevation tiles
+    for i, tile in enumerate(tiles_for_terrain):
+        tilename = f"{tilename_prefix}.{str(i).zfill(4)}"
+        build_plane(
+            get_flat_coords_3d(tile_to_terrarium_polygon(tile)),
+            name = tilename,
+        )
+        apply_terrarium_displace(
+            tilename,
+            terrarium_tile_name(tile),
+            cuts_ratio = 8,
+        )
+
+    # build terrain plane based on constructed terrarium planes
+    terrain_object = merge_planes(
+        tilename_prefix,
+        new_name = terrain_name,
+        merge_distance = 20,
+    )
+    terrain_mesh = cast(bpy.types.Mesh, terrain_object.data)
+    create_top_projected_uv(terrain_mesh)
+
+    # delete source terrarium tiles after terrain geometry is created
+    if delete_source_tiles:
+        for tile in tiles_for_terrain:
+            delete_file(terrarium_tile_name(tile))
+
+    # transform built terrain plane to ECEF CRS
+    # and translate it by `ecef_shift`
+    try:
+        # get flat array of floats
+        coords = numpy.empty(
+            len(terrain_mesh.vertices) * 3,
+            dtype = numpy.float64,
+        )
+        terrain_mesh.vertices.foreach_get("co", coords)
+
+        # three views, one for each coordinate
+        x = coords[0::3]
+        y = coords[1::3]
+        z = coords[2::3]
+
+        # vector transformation
+        x_out, y_out, z_out = crs_transform(*terrarium_to_ecef(x, y, z))
+
+        # interleave the result back to flat array
+        coords[0::3] = x_out
+        coords[1::3] = y_out
+        coords[2::3] = z_out
+
+        # update vertices and refresh
+        terrain_mesh.vertices.foreach_set("co", coords)
+        terrain_mesh.update()
+
+    except Exception as e:
+        print(f"CRS mesh transformation error: {e}")
+
+    # unique texture prefix based on provided bounds
+    merged_image_prefix = hashlib.sha256(
+        ".".join(str(b) for b in geo2d_bounds).encode("utf-8"),
+    ).hexdigest()
+
+    # sat map - merged image
+    satellite_image_file = merge_tiles(
+        tile_list_to_image_array(tiles_for_materials, satellite_tile_name),
+        f"{tiles_path}/{merged_image_prefix}.sat.jpg",
+    )
+
+    # xcontest topo map - merged image
+    xcontest_image_file = merge_tiles(
+        tile_list_to_image_array(tiles_for_materials, xcontest_tile_name),
+        f"{tiles_path}/{merged_image_prefix}.xc.jpg",
+    )
+
+    # open topo map - merged image
+    opentopo_image_file = merge_tiles(
+        tile_list_to_image_array(tiles_for_materials, opentopo_tile_name),
+        f"{tiles_path}/{merged_image_prefix}.topo.jpg",
+    )
+
+    # delete source material tiles after merging
+    if delete_source_tiles:
+        for tile in tiles_for_materials:
+            delete_file(satellite_tile_name(tile))
+            delete_file(xcontest_tile_name(tile))
+            delete_file(opentopo_tile_name(tile))
+
+    # terrain material
+    assign_material_to_mesh(
+        create_terrain_material(
+            satellite_image_file,
+            xcontest_image_file,
+            opentopo_image_file,
+        ),
+        terrain_mesh,
+    )
+
+    return (terrain_object, terrain_mesh)

@@ -26,6 +26,7 @@ def build_plane (
     mesh_data.from_pydata(point_data, [], [(0, 1, 2, 3)])
     mesh_data.update()
     bpy.context.collection.objects.link(plane_object)
+
     return (plane_object, mesh_data)
 
 
@@ -96,7 +97,7 @@ def build_3d_curve (
     name = "Curve",
     diameter = 10,
     resolution = 3,
-):
+) -> None:
     curve = bpy.data.curves.new(name + "_BezierCurve", type = "CURVE")
     curve.dimensions = "3D"
     curve.resolution_u = 12
