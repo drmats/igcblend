@@ -213,7 +213,11 @@ def apply_terrarium_displace (
 # build terrain object with material
 def build_terrain (
     geo2d_bounds: tuple[float, float, float, float],
-    crs_transform: CRSTransform,
+    ecef_to_enu_transform: CRSTransform | None,
+    terrarium_zoom: int = 15,
+    mesh_grid_subdivide_ratio: int = 8,
+    texture_tiles_subdivide_steps: int = 2,
+    terrain_tiles_merge_distance: int = 20,
     tiles_path: str = "/tmp",
     terrain_name: str = "Terrain",
     tilename_prefix: str = "TerrainTile",
@@ -223,12 +227,23 @@ def build_terrain (
     Downloads appropriate tileset of terrarium, satellite and topographic
     map tiles and build 3D terrain object with textured material out of it.
 
-    :param bounds: list[minx, miny, maxx, maxy] (west, south, east, north)
+    :param geo2d_bounds: list[minx, miny, maxx, maxy] (west, south, east, north)
         floats representing terrain boundary (decimal degrees, geo2D, lon-lat)
-    :param ecef_shift: 3D vector (x, y, z) by which terrain is translated
+    :param ecef_to_enu_transform: optional CRS transformation to local ENU space
+    :param terrarium_zoom: base zoom for terrain tiles resolution (max 15)
+    :param mesh_grid_subdivide_ratio: cuts ratio per one plane corresponding
+        to one terrarium tile - the greater the number, the lower the mesh grid
+        resolution (255 - no subdivide, 128 - 2x2, 64 - 4x4, 32 - 16x16 etc.)
+    :param texture_tiles_subdivide_steps: texture tiles zoom - computed as
+        `terrarium_zoom` + `texture_tiles_subdivide_steps`
+    :param terrain_tiles_merge_distance: distance in meters below which
+        terrain vertices are being collapsed to one vertex
+    :param tiles_path: path to store source tiles and produced texture images
     :param terrain_name: name for created terrain object
     :param tilename_prefix: name prefix for temporary tile planes
         representing one terrain tile
+    :param delete_source_tiles: if set to False, then source tiles
+        will be preserved
     """
 
     # tile naming functions
@@ -246,7 +261,7 @@ def build_terrain (
     )
 
     # create array with all tile coordinates covering given bounds
-    tiles_for_terrain = get_tilelist(*geo2d_bounds, zoom = 15)
+    tiles_for_terrain = get_tilelist(*geo2d_bounds, zoom = terrarium_zoom)
 
     # download terrarium elevation tiles
     terrarium_tiles_download_success = True
@@ -261,7 +276,10 @@ def build_terrain (
 
     # derive tile coords from `tiles_for_terrain`
     # in order to maintain the same padding expressed in tile widths
-    tiles_for_materials = tiles_subdivide(tiles_for_terrain, steps = 2)
+    tiles_for_materials = tiles_subdivide(
+        tiles_for_terrain,
+        steps = texture_tiles_subdivide_steps,
+    )
 
     # download sat and topo image tiles
     texture_tiles_download_success = True
@@ -286,14 +304,14 @@ def build_terrain (
         apply_terrarium_displace(
             tilename,
             terrarium_tile_name(tile),
-            cuts_ratio = 8,
+            cuts_ratio = mesh_grid_subdivide_ratio,
         )
 
     # build terrain plane based on constructed terrarium planes
     terrain_object = merge_planes(
         tilename_prefix,
         new_name = terrain_name,
-        merge_distance = 20,
+        merge_distance = terrain_tiles_merge_distance,
     )
     terrain_mesh = cast(bpy.types.Mesh, terrain_object.data)
     create_top_projected_uv(terrain_mesh)
@@ -319,7 +337,11 @@ def build_terrain (
         z = coords[2::3]
 
         # vector transformation
-        x_out, y_out, z_out = crs_transform(*terrarium_to_ecef(x, y, z))
+        x_out, y_out, z_out = terrarium_to_ecef(x, y, z)
+        if ecef_to_enu_transform is not None:
+            x_out, y_out, z_out = ecef_to_enu_transform(
+                x_out, y_out, z_out
+            )
 
         # interleave the result back to flat array
         coords[0::3] = x_out
