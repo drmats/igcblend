@@ -9,7 +9,6 @@ https://github.com/drmats
 
 import bpy # type: ignore
 import os
-from mathutils import Vector
 
 from lib.igc import parse_igc
 from lib.projections import (
