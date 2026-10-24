@@ -73,8 +73,8 @@ def main ():
     # ...
     build_terrain(
         geo2d_bounds = flight_geo2d_buffered_bounds,
-        crs_transform = ecef_to_enu,
-        tiles_path = tiles_path
+        ecef_to_enu_transform = ecef_to_enu,
+        tiles_path = tiles_path,
     )
 
     # ...
