@@ -95,9 +95,9 @@ def merge_planes (
 def build_3d_curve (
     point_data: list[tuple[float, float, float]],
     name = "Curve",
-    diameter = 10,
+    diameter = 8,
     resolution = 3,
-) -> None:
+) -> tuple[bpy.types.Object, bpy.types.Curve]:
     curve = bpy.data.curves.new(name + "_BezierCurve", type = "CURVE")
     curve.dimensions = "3D"
     curve.resolution_u = 12
@@ -114,3 +114,5 @@ def build_3d_curve (
 
     obj = bpy.data.objects.new(name, curve)
     bpy.context.collection.objects.link(obj)
+
+    return (obj, curve)
