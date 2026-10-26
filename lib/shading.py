@@ -9,6 +9,8 @@ https://github.com/drmats
 import bpy
 import mathutils
 
+from lib.utils import hex_to_rgba
+
 
 
 
@@ -667,13 +669,18 @@ def create_terrain_material (
 
 # simple, solid color material.
 def create_simple_color_material (
-    base_color: tuple[float, float, float, float] = (
-        *mathutils.Color((1.0, 0.6, 0.0)).from_srgb_to_scene_linear(), 1.0
-    ),
+    base_color: str = "#FF9900FF",
     name: str = "SimpleOrange",
 ) -> bpy.types.Material:
     # material
     simplecolormaterial = bpy.data.materials.get(name)
+
+    # color conversion
+    srgba_color = hex_to_rgba(base_color)
+    linear_base_color = (
+        *mathutils.Color(srgba_color[0:3]).from_srgb_to_scene_linear(),
+        srgba_color[3],
+    )
 
     # in-place update
     if simplecolormaterial is not None:
@@ -743,7 +750,7 @@ def create_simple_color_material (
     principled_bsdf.panel_states[5].is_collapsed = True
     principled_bsdf.panel_states[6].is_collapsed = True
     principled_bsdf.panel_states[7].is_collapsed = True
-    principled_bsdf.inputs[0].default_value = base_color # base color
+    principled_bsdf.inputs[0].default_value = linear_base_color # base color
     principled_bsdf.inputs[1].default_value = 0.0 # metallic
     principled_bsdf.inputs[2].default_value = 0.5 # roughness
     principled_bsdf.inputs[3].default_value = 1.5 # IOR
