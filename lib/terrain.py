@@ -45,7 +45,7 @@ from lib.projections import (
 from lib.fs import delete_file
 from lib.raster import merge_tiles
 from lib.shading import (
-    assign_material_to_mesh,
+    assign_material,
     create_terrain_material,
 )
 
@@ -357,7 +357,14 @@ def build_terrain (
 
     # unique texture prefix based on provided bounds
     merged_image_prefix = hashlib.sha256(
-        ".".join(str(b) for b in geo2d_bounds).encode("utf-8"),
+        ".".join(
+            str(b)
+                for b in [
+                    *geo2d_bounds,
+                    terrarium_zoom,
+                    texture_tiles_subdivide_steps,
+                ]
+        ).encode("utf-8"),
     ).hexdigest()
 
     # sat map - merged image
@@ -386,7 +393,7 @@ def build_terrain (
             delete_file(opentopo_tile_name(tile))
 
     # terrain material
-    assign_material_to_mesh(
+    assign_material(
         create_terrain_material(
             satellite_image_file,
             xcontest_image_file,

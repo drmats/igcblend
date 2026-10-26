@@ -7,6 +7,7 @@ https://github.com/drmats
 """
 
 import bpy
+import mathutils
 
 
 
@@ -612,51 +613,51 @@ def create_terrain_material (
     # links
     links.new(
         nodes["UV Map"].outputs[0],
-        nodes["Image Texture Top"].inputs[0]
+        nodes["Image Texture Top"].inputs[0],
     )
     links.new(
         nodes["UV Map"].outputs[0],
-        nodes["Image Texture Middle"].inputs[0]
+        nodes["Image Texture Middle"].inputs[0],
     )
     links.new(
         nodes["UV Map"].outputs[0],
-        nodes["Image Texture Bottom"].inputs[0]
+        nodes["Image Texture Bottom"].inputs[0],
     )
     links.new(
         nodes["Image Texture Top"].outputs[0],
-        nodes["Upper Dual Height Texture"].inputs[0]
+        nodes["Upper Dual Height Texture"].inputs[0],
     )
     links.new(
         nodes["Image Texture Middle"].outputs[0],
-        nodes["Middle Image HSV"].inputs[4]
+        nodes["Middle Image HSV"].inputs[4],
     )
     links.new(
         nodes["Middle Image HSV"].outputs[0],
-        nodes["Upper Dual Height Texture"].inputs[1]
+        nodes["Upper Dual Height Texture"].inputs[1],
     )
     links.new(
         nodes["Image Texture Bottom"].outputs[0],
-        nodes["Bottom Image Curves"].inputs[1]
+        nodes["Bottom Image Curves"].inputs[1],
     )
     links.new(
         nodes["Bottom Image Curves"].outputs[0],
-        nodes["Bottom Image HSV"].inputs[4]
+        nodes["Bottom Image HSV"].inputs[4],
     )
     links.new(
         nodes["Upper Dual Height Texture"].outputs[0],
-        nodes["Lower Dual Height Texture"].inputs[0]
+        nodes["Lower Dual Height Texture"].inputs[0],
     )
     links.new(
         nodes["Bottom Image HSV"].outputs[0],
-        nodes["Lower Dual Height Texture"].inputs[1]
+        nodes["Lower Dual Height Texture"].inputs[1],
     )
     links.new(
         nodes["Lower Dual Height Texture"].outputs[0],
-        nodes["Outer Emission Shadow"].inputs[0]
+        nodes["Outer Emission Shadow"].inputs[0],
     )
     links.new(
         nodes["Outer Emission Shadow"].outputs[0],
-        nodes["Material Output"].inputs[0]
+        nodes["Material Output"].inputs[0],
     )
 
     return terrainmaterial
@@ -664,12 +665,152 @@ def create_terrain_material (
 
 
 
-# assign material to first slot (create it if doesn't exist)
-def assign_material_to_mesh (
-    material: bpy.types.Material,
-    mesh: bpy.types.Mesh,
-) -> None:
-    if len(mesh.materials) == 0:
-        mesh.materials.append(material)
+# simple, solid color material.
+def create_simple_color_material (
+    base_color: tuple[float, float, float, float] = (
+        *mathutils.Color((1.0, 0.6, 0.0)).from_srgb_to_scene_linear(), 1.0
+    ),
+    name: str = "SimpleOrange",
+) -> bpy.types.Material:
+    # material
+    simplecolormaterial = bpy.data.materials.get(name)
+
+    # in-place update
+    if simplecolormaterial is not None:
+        simplecolormaterial.node_tree.links.clear()
+        simplecolormaterial.node_tree.nodes.clear()
+
+    # create new if non-existent
     else:
-        mesh.materials[0] = material
+        simplecolormaterial = bpy.data.materials.new(name)
+        if bpy.app.version < (5, 0, 0):
+            simplecolormaterial.use_nodes = True
+        simplecolormaterial.node_tree.color_tag = "NONE"
+        simplecolormaterial.node_tree.description = ""
+        simplecolormaterial.node_tree.default_group_node_width = 140
+
+    # shortcuts
+    nodes = simplecolormaterial.node_tree.nodes
+    links = simplecolormaterial.node_tree.links
+
+    # remove all nodes
+    for node in nodes:
+        nodes.remove(node)
+
+    # defaults
+    simplecolormaterial.alpha_threshold = 0.5
+    simplecolormaterial.line_priority = 0
+    simplecolormaterial.max_vertex_displacement = 0.0
+    simplecolormaterial.metallic = 0.0
+    simplecolormaterial.paint_active_slot = 0
+    simplecolormaterial.paint_clone_slot = 0
+    simplecolormaterial.pass_index = 0
+    simplecolormaterial.refraction_depth = 0.0
+    simplecolormaterial.roughness = 0.4
+    simplecolormaterial.show_transparent_back = True
+    simplecolormaterial.specular_intensity = 0.5
+    simplecolormaterial.use_backface_culling = False
+    simplecolormaterial.use_backface_culling_lightprobe_volume = True
+    simplecolormaterial.use_backface_culling_shadow = False
+    simplecolormaterial.use_preview_world = False
+    simplecolormaterial.use_raytrace_refraction = False
+    simplecolormaterial.use_screen_refraction = False
+    simplecolormaterial.use_sss_translucency = False
+    simplecolormaterial.use_thickness_from_shadow = False
+    simplecolormaterial.use_transparency_overlap = True
+    simplecolormaterial.use_transparent_shadow = True
+    simplecolormaterial.blend_method = "HASHED"
+    simplecolormaterial.displacement_method = "BUMP"
+    simplecolormaterial.preview_render_type = "SPHERE"
+    simplecolormaterial.surface_render_method = "DITHERED"
+    simplecolormaterial.thickness_mode = "SPHERE"
+    simplecolormaterial.volume_intersection_method = "FAST"
+    simplecolormaterial.specular_color = (1.0, 1.0, 1.0)
+    simplecolormaterial.diffuse_color = (0.8, 0.8, 0.8, 1.0)
+    simplecolormaterial.line_color = (0.0, 0.0, 0.0, 0.0)
+
+    # node: Principled BSDF
+    principled_bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+    principled_bsdf.name = "Principled BSDF"
+    principled_bsdf.show_options = True
+    principled_bsdf.distribution = "MULTI_GGX"
+    principled_bsdf.subsurface_method = "RANDOM_WALK"
+    principled_bsdf.panel_states[0].is_collapsed = True
+    principled_bsdf.panel_states[1].is_collapsed = True
+    principled_bsdf.panel_states[2].is_collapsed = True
+    principled_bsdf.panel_states[3].is_collapsed = True
+    principled_bsdf.panel_states[4].is_collapsed = True
+    principled_bsdf.panel_states[5].is_collapsed = True
+    principled_bsdf.panel_states[6].is_collapsed = True
+    principled_bsdf.panel_states[7].is_collapsed = True
+    principled_bsdf.inputs[0].default_value = base_color # base color
+    principled_bsdf.inputs[1].default_value = 0.0 # metallic
+    principled_bsdf.inputs[2].default_value = 0.5 # roughness
+    principled_bsdf.inputs[3].default_value = 1.5 # IOR
+    principled_bsdf.inputs[4].default_value = 1.0 # alpha
+    principled_bsdf.inputs[5].default_value = False # thin wall
+    principled_bsdf.inputs[6].default_value = (0.0, 0.0, 0.0) # normal
+    principled_bsdf.inputs[8].default_value = 0.0 # diffuse roughness
+    principled_bsdf.inputs[9].default_value = 0.0 # subsurface weight
+    principled_bsdf.inputs[10].default_value = (1.0, 0.2, 0.1) # subsurface radius
+    principled_bsdf.inputs[11].default_value = 0.005 # subsurface scale
+    principled_bsdf.inputs[13].default_value = 0.0 # subsurface anisotropy
+    principled_bsdf.inputs[14].default_value = 0.5 # specular IOR level
+    principled_bsdf.inputs[15].default_value = (1.0, 1.0, 1.0, 1.0) # specular tint
+    principled_bsdf.inputs[16].default_value = 0.0 # anisotropic
+    principled_bsdf.inputs[17].default_value = 0.0 # anisotropic rotation
+    principled_bsdf.inputs[18].default_value = (0.0, 0.0, 0.0) # tangent
+    principled_bsdf.inputs[19].default_value = 0.0 # transmission weight
+    principled_bsdf.inputs[20].default_value = 0.0 # coat weight
+    principled_bsdf.inputs[21].default_value = 0.03 # coat roughness
+    principled_bsdf.inputs[22].default_value = 1.5 # coat IOR
+    principled_bsdf.inputs[23].default_value = (1.0, 1.0, 1.0, 1.0) # coat tint
+    principled_bsdf.inputs[24].default_value = (0.0, 0.0, 0.0) # coat normal
+    principled_bsdf.inputs[25].default_value = 0.0 # wheen weight
+    principled_bsdf.inputs[26].default_value = 0.5 # sheen roughness
+    principled_bsdf.inputs[27].default_value = (1.0, 1.0, 1.0, 1.0) # sheen tint
+    principled_bsdf.inputs[28].default_value = (1.0, 1.0, 1.0, 1.0) # emission color
+    principled_bsdf.inputs[29].default_value = 0.0 # emission strength
+    principled_bsdf.inputs[30].default_value = 0.0 # thin film thickness
+    principled_bsdf.inputs[31].default_value = 1.33 # thin film IOR
+
+    # node: Material Output
+    material_output = nodes.new("ShaderNodeOutputMaterial")
+    material_output.name = "Material Output"
+    material_output.show_options = True
+    material_output.is_active_output = True
+    material_output.target = "ALL"
+    material_output.inputs[2].default_value = (0.0, 0.0, 0.0) # displacement
+    material_output.inputs[3].default_value = 0.0 # thickness
+
+    # locations
+    nodes["Principled BSDF"].location = (-200.0, 100.0)
+    nodes["Material Output"].location = (200.0, 100.0)
+
+    # dimensions
+    nodes["Principled BSDF"].width  = 240.0
+    nodes["Principled BSDF"].height = 100.0
+
+    nodes["Material Output"].width  = 140.0
+    nodes["Material Output"].height = 100.0
+
+    # links
+    links.new(
+        nodes["Principled BSDF"].outputs[0],
+        nodes["Material Output"].inputs[0],
+    )
+
+    return simplecolormaterial
+
+
+
+
+# assign material to first slot (create it if doesn't exist)
+def assign_material (
+    material: bpy.types.Material,
+    geometry: bpy.types.Mesh | bpy.types.Curve,
+) -> None:
+    if len(geometry.materials) == 0:
+        geometry.materials.append(material)
+    else:
+        geometry.materials[0] = material
