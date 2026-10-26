@@ -23,6 +23,10 @@ from lib.simplegeom import (
 )
 from lib.modeling import build_3d_curve
 from lib.terrain import build_terrain
+from lib.shading import (
+    assign_material,
+    create_simple_color_material,
+)
 
 
 
@@ -65,22 +69,31 @@ def main ():
                 *flight_geo2d_bounds,
                 transformer = geo3d_to_utm,
             ),
-            distance = 1200,
+            distance = 2000,
         ),
         transformer = utm_to_geo3d
     )
 
-    # ...
+    # terrain
+    terrarium_zoom = 15
+    merge_distance = 20 * 2 ** (15 - terrarium_zoom)
     build_terrain(
         geo2d_bounds = flight_geo2d_buffered_bounds,
         ecef_to_enu_transform = ecef_to_enu,
         tiles_path = tiles_path,
+        terrarium_zoom = terrarium_zoom,
+        texture_tiles_subdivide_steps = 1,
+        terrain_tiles_merge_distance = merge_distance,
     )
 
-    # ...
-    build_3d_curve(
+    # flight path
+    _, flight_curve = build_3d_curve(
         [ecef_to_enu(*coord) for coord in flight_coords_ecef],
         name = "Flight",
+    )
+    assign_material(
+        create_simple_color_material(),
+        flight_curve,
     )
 
     return
