@@ -356,7 +356,7 @@ def build_terrain (
         print(f"CRS mesh transformation error: {e}")
 
     # unique texture prefix based on provided bounds
-    merged_image_prefix = hashlib.sha256(
+    merged_image_prefix = hashlib.md5(
         ".".join(
             str(b)
                 for b in [
