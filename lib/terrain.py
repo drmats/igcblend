@@ -7,8 +7,9 @@ https://github.com/drmats
 
 import bpy # type: ignore
 import numpy
-from typing import cast
 import hashlib
+from typing import cast
+import os
 
 from lib.layout import (
     clear_selection,
@@ -274,6 +275,24 @@ def build_terrain (
     if not terrarium_tiles_download_success:
         raise Exception("Terrain tileset download error.")
 
+    # unique texture prefix based on provided bounds
+    merged_texture_image_prefix = hashlib.md5(
+        ".".join(
+            str(b)
+                for b in [
+                    *geo2d_bounds,
+                    terrarium_zoom,
+                    texture_tiles_subdivide_steps,
+                ]
+        ).encode("utf-8"),
+    ).hexdigest()
+    sat_texture_file = f"{tiles_path}/{merged_texture_image_prefix}.sat.jpg"
+    sat_texture_file_exists = os.path.exists(sat_texture_file)
+    xc_texture_file = f"{tiles_path}/{merged_texture_image_prefix}.xc.jpg"
+    xc_texture_file_exists = os.path.exists(xc_texture_file)
+    topo_texture_file = f"{tiles_path}/{merged_texture_image_prefix}.topo.jpg"
+    topo_texture_file_exists = os.path.exists(topo_texture_file)
+
     # derive tile coords from `tiles_for_terrain`
     # in order to maintain the same padding expressed in tile widths
     tiles_for_materials = tiles_subdivide(
@@ -285,9 +304,12 @@ def build_terrain (
     texture_tiles_download_success = True
     for tile in tiles_for_materials:
         try:
-            download_satellite_tile(tile, satellite_tile_name)
-            download_xcontest_topo_tile(tile, xcontest_tile_name)
-            download_open_topo_tile(tile, opentopo_tile_name)
+            if not sat_texture_file_exists:
+                download_satellite_tile(tile, satellite_tile_name)
+            if not xc_texture_file_exists:
+                download_xcontest_topo_tile(tile, xcontest_tile_name)
+            if not topo_texture_file_exists:
+                download_open_topo_tile(tile, opentopo_tile_name)
         except Exception as e:
             print(f"Tile download failed: {terrarium_tile_name(tile)}")
             texture_tiles_download_success = False
@@ -355,35 +377,26 @@ def build_terrain (
     except Exception as e:
         print(f"CRS mesh transformation error: {e}")
 
-    # unique texture prefix based on provided bounds
-    merged_image_prefix = hashlib.md5(
-        ".".join(
-            str(b)
-                for b in [
-                    *geo2d_bounds,
-                    terrarium_zoom,
-                    texture_tiles_subdivide_steps,
-                ]
-        ).encode("utf-8"),
-    ).hexdigest()
-
     # sat map - merged image
-    satellite_image_file = merge_tiles(
-        tile_list_to_image_array(tiles_for_materials, satellite_tile_name),
-        f"{tiles_path}/{merged_image_prefix}.sat.jpg",
-    )
+    if not sat_texture_file_exists:
+        merge_tiles(
+            tile_list_to_image_array(tiles_for_materials, satellite_tile_name),
+            sat_texture_file,
+        )
 
     # xcontest topo map - merged image
-    xcontest_image_file = merge_tiles(
-        tile_list_to_image_array(tiles_for_materials, xcontest_tile_name),
-        f"{tiles_path}/{merged_image_prefix}.xc.jpg",
-    )
+    if not xc_texture_file_exists:
+        merge_tiles(
+            tile_list_to_image_array(tiles_for_materials, xcontest_tile_name),
+            xc_texture_file,
+        )
 
     # open topo map - merged image
-    opentopo_image_file = merge_tiles(
-        tile_list_to_image_array(tiles_for_materials, opentopo_tile_name),
-        f"{tiles_path}/{merged_image_prefix}.topo.jpg",
-    )
+    if not topo_texture_file_exists:
+        merge_tiles(
+            tile_list_to_image_array(tiles_for_materials, opentopo_tile_name),
+            topo_texture_file,
+        )
 
     # delete source material tiles after merging
     if delete_source_tiles:
@@ -395,9 +408,9 @@ def build_terrain (
     # terrain material
     assign_material(
         create_terrain_material(
-            satellite_image_file,
-            xcontest_image_file,
-            opentopo_image_file,
+            sat_texture_file,
+            xc_texture_file,
+            topo_texture_file,
         ),
         terrain_mesh,
     )
