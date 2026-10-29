@@ -69,6 +69,21 @@ def download_terrarium_tile (
 
 
 # ...
+def download_mapterhorn_tile (
+    t: Tile,
+    destination: TileNameFunction = (
+        lambda t: f"mapterhorn.{t.z}.{t.x}.{t.y}.webp"
+    ),
+) -> None:
+    download_file(
+        f"https://tiles.mapterhorn.com/{t.z}/{t.x}/{t.y}.webp",
+        destination(t),
+    )
+
+
+
+
+# ...
 def download_satellite_tile (
     t: Tile,
     destination: TileNameFunction = (
